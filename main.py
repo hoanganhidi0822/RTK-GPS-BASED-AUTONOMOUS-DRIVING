@@ -1,0 +1,457 @@
+
+import math
+import time
+import numpy as np
+import threading
+import config as cf
+import pycuda.driver as cuda
+from RTK_GPS.GPS_module import *
+from HD_MAP.HDMAP import *
+from CONTROLLER.utils.communication import STM32
+from OPTIMAL_TRAJECTORY.frenet_optimal_trajectory import *
+camera_index = 0
+from OBSTACLES.obstacle import process_depth
+import sys
+from VISUALIZATION.visualization import *
+from VOICE.voice import *
+
+
+import simpleaudio as sa
+
+
+# --------------- UART ------------------------- #
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
+# gps_ser = 1
+
+collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
+destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
+# ---------------- CUDA ------------------------ #
+# cuda.init()  # Khởi tạo CUDA
+# device = cuda.Device(0)  # Chọn GPU đầu tiên
+# context = device.make_context()  # Tạo context CUDA trong thread
+
+# ---------------- Config init ------------------ #
+cf.latitude = None
+cf.longitude = None
+cf.heading = None
+
+cf.image = np.zeros((480, 1280, 3))
+cf.obstacles = []
+
+cf.tx                 = []
+cf.ty                 = []
+cf.tyaw               = []
+cf.ob                 = []
+cf.paths              = []
+cf.optimal_path       = []
+cf.x                  = 0
+cf.y                  = 0
+cf.yaw                = 0 
+cf.steering_angle     = 0 
+cf.lookahead_distance = (0,0) 
+cf.lookahead_point    = (0,0) 
+cf.projected_point    = (0,0) 
+cf.car_speed          = 0 
+cf.car_steer          = 0 
+cf.area               = 20
+cf.MAX_ROAD_WIDTH     = 6
+cf.record = 1
+cf.rtk_status = "No Fix"
+cf.persons = []
+cf.speed = 0
+cf.camera_error = 0
+
+def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_speed):
+    cf.tx                 = tx
+    cf.ty                 = ty
+    cf.tyaw               = tyaw
+    cf.ob                 = ob
+    cf.paths              = paths
+    cf.optimal_path       = optimal_path
+    cf.x                  = x
+    cf.y                  = y
+    cf.yaw                = yaw
+    cf.steering_angle     = steering_angle 
+    cf.lookahead_distance = (0,0) 
+    cf.lookahead_point    = (0,0) 
+    cf.projected_point    = (0,0) 
+    cf.car_speed          = 0 
+    cf.car_steer          = 0 
+    cf.area               = 20
+    cf.MAX_ROAD_WIDTH     = 6
+    cf.speed = gps_speed
+
+# ---------- Car State ------------ #
+def update_state(ser):
+   
+    # ------------- GPS ------------- #
+    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+
+    # print(f"lat {lat}, lon {lon}, heading {car_heading}")
+    # lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 195, "Single", 15
+    # time.sleep(0.1)
+
+    # -------- Convert data to X Y frame --------- #
+    x, y = lat_lon_to_xy(float(lat), float(lon))
+    yaw_c = np.deg2rad(convert_yaw(float(car_heading), yaw_offset=90))
+    
+    return lat, lon, rtk_status, int(speed), x, y, yaw_c 
+
+# ------ Depth_Obstacle_Position_Estimation ------- #
+def depth_thread():
+    process_depth()
+
+
+def run_visualization():
+    app = QApplication(sys.argv)
+    window = AutonomousCarUI()
+    window.show()
+    sys.exit(app.exec_())
+
+def slow_down_speed(distance, max_speed):
+    """
+    Function to slow down the car speed based on the distance to obstacle
+    :param distance: The distance from the car to the obstacle
+    :param max_speed: The maximum speed of the car
+    :return: The speed of the car
+    """
+    
+    return int(max_speed * (1 / (1 + math.exp(5 - 1 * distance))))  # 5 và 1 là các hệ số điều chỉnh
+
+def main():
+    print(__file__ + " start!!")
+    cf.record = 1
+    fps = 0
+    time_start = 0
+
+    # Initial GPS state
+    lat, lon, car_heading = 10.85257737,106.7714248783, 185
+    x, y = 16.993362287481073, 152.51032455731195
+    wx, wy = [],[]
+
+    # Obstacles
+    danger_zone = 2.0  # mét
+
+    obstacles = []
+    persons = []
+    new_persons = []
+    new_obstacles = []
+    ob = np.array([[0, 0]])
+    obs = [[999, 999]]
+
+    # Initial state
+    c_speed = 0                     # current speed [m/s]
+    c_d     = 0.0                   # current lateral position [m]
+    c_d_d   = 0.0                   # current lateral speed [m/s]
+    c_d_dd  = 0.0                   # current lateral acceleration [m/s]
+    s0      = 0.0                   # current course position
+     
+    yaw = np.deg2rad(85)            # Convert yaw to radians
+    car_speed = 2.8                 # Car speed [m/s]
+    car_steer = 0                   # Car steering angle [degree]
+ 
+    # Tracking Algorithm Parameters 
+    lookahead_distance = 4.5        # Lookahead distance [m]
+    L = 1.8                         # Wheelbase of the vehicle [m]
+    count = 0
+    
+    person_detected_time = None
+    stop_triggered = False
+    resume_timer = None  # Thời điểm bắt đầu đếm để chạy lại
+
+
+    speed_filtered = 0
+    alpha_speed = 0.9
+
+    stm32(angle=int(0), speed=int(0), brake_state=0)
+
+    # Wait Assistance
+    while cf.record:
+        continue
+
+    # -- Wait GPS --- #
+    while True:
+        
+        lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
+        try:
+            lat = float(lat)         
+            lon = float(lon)
+        
+            if not math.isnan(lat):  
+                break
+        except ValueError:
+            pass  
+
+    # Start thread for depth processing
+    time.sleep(1)
+    depth_thread_instance = threading.Thread(target=depth_thread)
+    depth_thread_instance.daemon = True
+    depth_thread_instance.start()
+
+    # --- Khởi tạo thread phát âm thanh --- #
+    audio_thread = threading.Thread(target=area_audio_thread_func, args=(lat, lon))
+    audio_thread.daemon = True
+    audio_thread.start()
+
+    # Read Waypoints
+    wx, wy = XY_WAYPOINTS_MAP(input_file)
+    # Generate target course 
+    tx, ty, tyaw, tc, csp = generate_target_course(wx, wy)
+
+    count_none = 0
+    target_speed = 8
+    # --- Main Loop --- #
+    while True:
+        
+        # Update vehicle state using RTK GPS
+        lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
+        cf.rtk_status = rtk_status
+        cf.latitude = lat
+        cf.longitude = lon
+        if x == None:
+            continue
+
+
+        # --------------------   Update person state  ------------------- #
+        new_persons = cf.persons
+        # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
+        if len(new_persons): 
+            persons = []
+            persons = new_persons
+            new_persons = []
+
+        
+        danger_zone = 1.5  # mét
+
+        found_person = False
+        for person in persons:
+            if abs(person[0]) < danger_zone and abs(person[1]) < 5.0:
+                found_person = True
+                break
+
+        current_time = time.time()
+
+        # Phát hiện người lần đầu
+        if found_person and person_detected_time is None:
+            person_detected_time = current_time
+
+        # Không còn người trong vùng nguy hiểm
+        elif not found_person:
+            person_detected_time = None
+            if stop_triggered and resume_timer is None:
+                resume_timer = current_time  # Bắt đầu đếm để chạy lại
+
+        # Người vẫn còn sau 1.5 giây => dừng xe
+        elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
+            stm32(angle=int(-0), speed=int(0), brake_state=0)
+            play_ = collision_sound.play()
+            play_.wait_done()
+            stm32(angle=int(-0), speed=0, brake_state=0)
+            stop_triggered = True
+            # resume_timer = None
+            print("\n[ALERT] Người xuất hiện liên tục trong 1.5s – Dừng xe!")
+
+        # Nếu người đã rời đi và đủ thời gian (3 giây) thì cho xe chạy lại
+        if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 3.0:
+            stop_triggered = False
+            resume_timer = None
+            print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
+                
+
+        # --------------------   Update obstacle state  ------------------- #
+        new_obstacles =  cf.obstacles
+        # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
+        if len(new_obstacles): 
+            obstacles = []
+            obstacles = new_obstacles
+            new_obstacles = []
+            
+        # obstacles = [[-8,12]]
+        for obstacle in obstacles:
+            obs.append(transform_obstacle_to_global(x, y, yaw, obstacle[1], obstacle[0]))
+
+        ob = np.array(obs)
+        # for obs in ob:
+        #     print(obs)
+
+        # ------------------------- Generate optimal path ------------------------- #
+        optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
+
+        # ------------------------- Optimal Path None => Replan
+        while optimal_path is None:          
+            print("optimal_path is None !!!")
+            lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
+        
+            # Project the current position onto the target course
+            # projected_point = project_onto_path(x, y, tx, ty)
+
+            new_obstacles =  cf.obstacles
+            # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
+            if len(new_obstacles): 
+                obstacles = []
+                obstacles = new_obstacles
+                new_obstacles = []
+                
+            # obstacles = [[-8,12]]
+            for obstacle in obstacles:
+                obs.append(transform_obstacle_to_global(x, y, yaw, obstacle[1], obstacle[0]))
+
+            ob = np.array(obs)
+
+            s0, c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
+
+            optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
+
+            count_none += 1
+            if count_none == 3:
+                stm32(angle= int(-5), speed=0, brake_state=0)
+            elif count_none > 20:
+                print("Replanning failed too many times — entering safe mode.")
+                stm32(angle=0, speed=0, brake_state=1)
+                # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
+                obs = [] 
+                count_none = 0
+        # ---------------------- Pure Pursuit Control ------------------------ #
+        if x is not None:
+            # Pure Pursuit control: use the optimal path from Frenet
+
+            if len(obstacles):
+                
+                lookahead_distance = 4.5
+            else:
+                lookahead_distance = 4.5
+            
+            car_steer,  lookahead_point = pure_pursuit_control_frenet(float(lat), float(lon),
+                                                                        optimal_path, x, y,yaw, lookahead_distance, L)
+            
+            # Project the current position onto the target course
+            # projected_point = project_onto_path(x, y, tx, ty)
+            # s0 , _, __, ___ = cartesian_to_frenet(projected_point[0], projected_point[1], yaw, csp)
+            s0 , c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
+            
+            # c_d = optimal_path.d[1]
+            c_d_d = optimal_path.d_d[1]
+            c_d_dd = optimal_path.d_dd[1]
+            c_speed = car_speed    
+            
+
+            # # ------- CALCULATE TARGET SPEED ------- #
+            # distance_to_goal = np.hypot(tx[-1] - x, ty[-1] - y)
+
+            # if distance_to_goal < 3:
+            #     target_speed = max(0, slow_down_speed(distance_to_goal, 8))
+            # else:
+            #     target_speed = 8
+
+            # if len(obstacles):
+            #     target_speed = min(target_speed, 6)
+
+
+            # Giảm tốc độ khi vào cua
+            try:
+                i = min(5, len(optimal_path.x) - 3)
+                dx = optimal_path.x[i+1] - optimal_path.x[i]
+                dy = optimal_path.y[i+1] - optimal_path.y[i]
+                ddx = optimal_path.x[i+2] - 2 * optimal_path.x[i+1] + optimal_path.x[i]
+                ddy = optimal_path.y[i+2] - 2 * optimal_path.y[i+1] + optimal_path.y[i]
+
+                numerator = abs(dx * ddy - dy * ddx)
+                denominator = (dx**2 + dy**2)**1.5 + 1e-6  # tránh chia 0
+                curvature = numerator / denominator
+
+                if curvature > 0.1:
+                    target_speed = min(target_speed, 5)
+
+            except Exception as e:
+                print("[WARNING] Curvature calc failed:", e)
+
+            # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
+            if gps_speed > 8:
+                target_speed = max(0, 1)  # Giảm tốc
+            elif gps_speed < 6.5 and target_speed < 8:
+                target_speed = 9 # Tăng tốc
+
+            # Giới hạn trên
+            target_speed = min(target_speed, 9)
+
+            # --------- GIẢM TỐC KHI GẦN ĐÍCH --------- #
+            distance_to_goal = np.hypot(tx[-1] - x, ty[-1] - y)
+
+            if distance_to_goal < 5:
+                target_speed = min(target_speed, slow_down_speed(distance_to_goal, 8))
+
+            # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
+            if len(obstacles) or len(persons):
+                target_speed = min(target_speed, 7)
+
+            # Low-pass filter: target speed
+            speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
+
+            # ----------- CONTROL BLOCK ------------- ####################################################################################
+            steering_angle = car_steer 
+
+            should_stop = False
+            # 1. Camera lỗi
+            if cf.camera_error == 1:
+                print("[WARNING] Camera error – Dừng xe!")
+                should_stop = True
+
+            # 2. Phát hiện người trong vùng nguy hiểm (đã được xử lý ở phần trước)
+            if stop_triggered:
+                print("[INFO] Người trong vùng nguy hiểm – Đang dừng xe.")
+                should_stop = True
+
+            # 3. RTK không sẵn sàng (tùy chọn)
+            # if cf.rtk_status not in ["RTK Fixed", "RTK Float"]:
+            #     print("[WARNING] RTK chưa sẵn sàng – Dừng xe.")
+            #     should_stop = True
+
+            if should_stop:
+                stm32(angle=int(-0), speed=int(0), brake_state=0)
+            else:
+                # Cho xe chạy nếu mọi thứ ổn định
+                count += 1
+                if count == 1:
+                    stm32(angle=int(steering_angle * 1.00), speed=int(speed_filtered), brake_state=0)
+                    count = 0
+            ############################################################################################################################ 
+    
+        # Check if the goal is reached
+        if np.isclose(x, tx[-1], atol = 3.0) and np.isclose(y, ty[-1], atol = 3.0):
+            gps_speed = "Goal reached!"
+            stm32(angle=0, speed=0, brake_state=1) 
+            print("Goal reached!")
+            play__ = destination_sound.play()
+            play__.wait_done()
+            return
+        
+
+        obstacles = []   
+        persons = [] 
+
+
+        # FPS
+        alpha = 0.5
+        delta_t = time.time() - time_start
+        if delta_t > 0:
+            fps = (1 - alpha) * fps + alpha * (1 / delta_t)
+        time_start = time.time()
+        
+        print(f"\rCurvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {target_speed}, Steering angle: {steering_angle:.2f}, FPS: {round(fps, 2)}", end="")
+      
+        update_vis(x,y,yaw,car_steer,paths,optimal_path,tx,ty,tyaw,ob,gps_speed*1.5)
+        obs = []
+    
+if __name__ == '__main__':
+         
+    vis_process = threading.Thread(target=run_visualization)
+    vis_process.daemon = True
+    vis_process.start()
+
+    while True:    
+        main()
+    
+          
+
+

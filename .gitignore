@@ -1,0 +1,35 @@
+# Bỏ qua file mô hình trong các thư mục cụ thể
+OBSTACLES/checkpoints/*.pt
+OBSTACLES/checkpoints/*.pth
+FACE_DETECTION/model/*.onnx
+
+# Bỏ qua các file ảnh .png trong thư mục image*
+OBSTACLES/image*/*.png
+
+# Bỏ qua tất cả các file .pt, .pth trên toàn bộ repo
+*.pt
+*.pth
+
+# Bỏ qua file mô hình khác nếu có
+*.onnx
+
+# Bỏ qua các thư mục thường chứa dữ liệu hoặc mô hình
+checkpoints/
+models/
+weights/
+runs/
+outputs/
+
+# Bỏ qua file log, tạm
+*.log
+*.tmp
+
+# Bỏ qua môi trường ảo Python
+env/
+venv/
+.venv/
+
+# Bỏ qua file hệ thống / IDE
+.DS_Store
+.vscode/
+.idea/
