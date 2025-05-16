@@ -14,3 +14,4 @@ This project integrates high-precision **RTK-GPS** positioning with real-time **
 - **Pure Pursuit Controller**: For trajectory tracking.
 - **PyQt5 GUI**: Visual interface showing GPS map, obstacle positions, and live vehicle state.
 
+- Phan Van Hoang Anh
