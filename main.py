@@ -161,8 +161,7 @@ def main():
     resume_timer = None  # Thời điểm bắt đầu đếm để chạy lại
 
 
-    speed_filtered = 0
-    alpha_speed = 0.9
+   
 
     stm32(angle=int(0), speed=int(0), brake_state=0)
 
@@ -201,6 +200,12 @@ def main():
 
     count_none = 0
     target_speed = 8
+
+    speed_filtered = 0
+    alpha_speed = 0.9
+
+    steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
+    alpha_steering = 0.7   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     # --- Main Loop --- #
     while True:
         
@@ -247,7 +252,7 @@ def main():
             stm32(angle=int(-0), speed=int(0), brake_state=0)
             play_ = collision_sound.play()
             play_.wait_done()
-            stm32(angle=int(-0), speed=0, brake_state=0)
+            # stm32(angle=int(-0), speed=0, brake_state=0)
             stop_triggered = True
             # resume_timer = None
             print("\n[ALERT] Người xuất hiện liên tục trong 1.5s – Dừng xe!")
@@ -368,9 +373,11 @@ def main():
 
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
             if gps_speed > 8:
-                target_speed = max(0, 1)  # Giảm tốc
-            elif gps_speed < 6.5 and target_speed < 8:
-                target_speed = 9 # Tăng tốc
+                target_speed = 1  # Giảm tốc
+            elif gps_speed < 6.0:
+                target_speed = 9  # Tăng tốc
+            else:
+                target_speed = 8  # Duy trì tốc độ ổn định
 
             # Giới hạn trên
             target_speed = min(target_speed, 9)
@@ -384,12 +391,17 @@ def main():
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) or len(persons):
                 target_speed = min(target_speed, 7)
+                obstacles = []   
+                persons = [] 
 
             # Low-pass filter: target speed
             speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
 
             # ----------- CONTROL BLOCK ------------- ####################################################################################
-            steering_angle = car_steer 
+            # Giả sử steering_angle được tính từ hệ thống điều khiển:
+            steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
+            steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
+
 
             should_stop = False
             # 1. Camera lỗi
@@ -413,12 +425,12 @@ def main():
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    stm32(angle=int(steering_angle * 1.00), speed=int(speed_filtered), brake_state=0)
+                    stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
                     count = 0
             ############################################################################################################################ 
-    
+            persons = [] 
         # Check if the goal is reached
-        if np.isclose(x, tx[-1], atol = 3.0) and np.isclose(y, ty[-1], atol = 3.0):
+        if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
             gps_speed = "Goal reached!"
             stm32(angle=0, speed=0, brake_state=1) 
             print("Goal reached!")
