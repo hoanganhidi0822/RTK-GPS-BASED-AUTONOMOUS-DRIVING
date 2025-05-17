@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Di chuyển đến thư mục chứa project (nếu cần)
-# cd /path/to/RTK-GPS-BASED-AUTONOMOUS-DRIVING
-
 # In ra trạng thái Git trước khi commit
 echo "Checking git status..."
 git status
@@ -12,7 +9,7 @@ echo "Adding changes..."
 git add .
 
 # Tạo commit với thời gian hiện tại
-COMMIT_MSG="Daily update: $(date '+%Y-%m-%d %H:%M:%S')"
+COMMIT_MSG="update: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "Commit with message: '$COMMIT_MSG'"
 git commit -m "$COMMIT_MSG"
 

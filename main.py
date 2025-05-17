@@ -205,7 +205,7 @@ def main():
     alpha_speed = 0.9
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.7   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.85   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     # --- Main Loop --- #
     while True:
         
@@ -352,7 +352,7 @@ def main():
             # if len(obstacles):
             #     target_speed = min(target_speed, 6)
 
-
+            ################## SPEED CONTROL ##################################################################################################
             # Giảm tốc độ khi vào cua
             try:
                 i = min(5, len(optimal_path.x) - 3)
@@ -370,6 +370,34 @@ def main():
 
             except Exception as e:
                 print("[WARNING] Curvature calc failed:", e)
+
+
+
+            
+            # --------- KHỞI TẠO BIẾN TOÀN CỤC --------- #
+            if 'prev_gps_speed' not in globals():
+                prev_gps_speed = gps_speed
+                send_zero_speed = False
+                zero_speed_sent = False
+
+            # --------- TÍNH ĐẠO HÀM TỐC ĐỘ GPS --------- #
+            delta_speed = gps_speed - prev_gps_speed
+            prev_gps_speed = gps_speed
+
+            # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- #
+            if gps_speed < 1.0 and delta_speed < -1.0:
+                send_zero_speed = True
+                zero_speed_sent = False
+
+            # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
+            if send_zero_speed and not zero_speed_sent:
+                target_speed = 0
+                zero_speed_sent = True
+                return target_speed  # Gửi 0 rồi kết thúc sớm
+
+            # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
+            if send_zero_speed and zero_speed_sent:
+                send_zero_speed = False  # Reset lại cờ
 
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
             if gps_speed > 8:
@@ -389,12 +417,13 @@ def main():
                 target_speed = min(target_speed, slow_down_speed(distance_to_goal, 8))
 
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
-            if len(obstacles) or len(persons):
+            if len(obstacles) > 0 or len(persons) > 0:
                 target_speed = min(target_speed, 7)
-                obstacles = []   
-                persons = [] 
 
-            # Low-pass filter: target speed
+            # Reset sau khi xử lý
+            obstacles = []
+            persons = []
+             # Low-pass filter: target speed
             speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
 
             # ----------- CONTROL BLOCK ------------- ####################################################################################
