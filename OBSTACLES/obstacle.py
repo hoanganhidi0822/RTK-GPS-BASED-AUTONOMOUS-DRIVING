@@ -105,9 +105,11 @@ def process_depth():
     global persons
     fps = 0
     i = 0
+    count_frame = 2
     while 1:
         time_start = time.time()
         ret, raw_frame = cap.read()
+        count_frame += 1
         raw_frame = cv2.remap(raw_frame, map1, map2, interpolation=cv2.INTER_LINEAR)
         # raw_frame = cv2.undistort(raw_frame, camera_matrix, dist_coeffs)
         
@@ -118,9 +120,12 @@ def process_depth():
 
         # Infer depth
         i=i+1
-        with torch.no_grad(), torch.amp.autocast('cuda'):  
-            results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2])
-            depth_map = depth_anything.infer_image(raw_frame, args.input_size)
+
+        if count_frame % 3 == 0:
+            count_frame = 0
+            with torch.no_grad(), torch.amp.autocast('cuda'):  
+                results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2])
+                depth_map = depth_anything.infer_image(raw_frame, args.input_size)
         
         
         depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 65535
@@ -190,7 +195,7 @@ def process_depth():
         obstacles = []
         persons = []
         # # Visualization
-        alpha = 0.5
+        alpha = 0.95
         delta_t = time.time() - time_start
         if delta_t > 0:
             fps = (1 - alpha) * fps + alpha * (1 / delta_t)

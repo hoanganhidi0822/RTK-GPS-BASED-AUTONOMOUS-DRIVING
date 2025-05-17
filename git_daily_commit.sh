@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # In ra trạng thái Git trước khi commit
 echo "Checking git status..."
 git status
