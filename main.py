@@ -160,8 +160,10 @@ def main():
     stop_triggered = False
     resume_timer = None  # Thời điểm bắt đầu đếm để chạy lại
 
-
-   
+    # RTK‑status stop/resume timers
+    rtk_bad = False
+    rtk_bad_start = None
+    rtk_resume_start = None
 
     # stm32(angle=int(0), speed=int(0), brake_state=0)
 
@@ -444,10 +446,31 @@ def main():
                 print("[INFO] Người trong vùng nguy hiểm – Đang dừng xe.")
                 should_stop = True
 
-            # 3. RTK không sẵn sàng (tùy chọn)
-            # if cf.rtk_status not in ["RTK Fixed", "RTK Float"]:
-            #     print("[WARNING] RTK chưa sẵn sàng – Dừng xe.")
-            #     should_stop = True
+            # 3) RTK‑status hysteresis
+            if cf.rtk_status != "RTK Fixed":
+                # just lost RTK
+                if not rtk_bad:
+                    rtk_bad = True
+                    rtk_bad_start = current_time
+                    rtk_resume_start = None
+                    print("[WARNING] RTK mất Fixed – Dừng xe ngay!")
+                should_stop = True
+
+            else:  # cf.rtk_status == "RTK Fixed"
+                if rtk_bad:
+                    # start counting “good” time
+                    if rtk_resume_start is None:
+                        rtk_resume_start = current_time
+                    # if fixed long enough, clear the bad flag
+                    elif (current_time - rtk_resume_start) >= 3.0:
+                        print("[INFO] RTK Fixed liên tục >3s – Cho chạy lại.")
+                        rtk_bad = False
+                        rtk_bad_start = None
+                        rtk_resume_start = None
+
+                # if still in bad state, keep should_stop True
+                if rtk_bad:
+                    should_stop = True
 
             if should_stop:
                 pass
