@@ -486,7 +486,18 @@ def main():
         
         print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {target_speed}, Steering angle: {steering_angle:.2f}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
-        update_vis(x,y,yaw,car_steer,paths,optimal_path,tx,ty,tyaw,ob,gps_speed*1.5)
+        # right before your update_vis() call:
+        if isinstance(gps_speed, (int, float)):
+            vis_speed = gps_speed * 1.5
+        else:
+            # assume it's a string like "Goal reached!"
+            vis_speed = gps_speed
+
+        # now call update_vis with the right argument:
+        update_vis(x, y, yaw,
+                car_steer, paths, optimal_path,
+                tx, ty, tyaw, ob,
+                vis_speed)
         obs = []
     
 if __name__ == '__main__':
