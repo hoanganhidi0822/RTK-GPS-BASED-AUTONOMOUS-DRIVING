@@ -20,8 +20,8 @@ import simpleaudio as sa
 
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
+stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
 # gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")

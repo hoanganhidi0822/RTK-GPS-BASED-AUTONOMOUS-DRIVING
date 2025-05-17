@@ -12,7 +12,7 @@ import matplotlib.transforms as transforms
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.transforms import Affine2D
-
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QTimer, QSize, QRect, QPoint, QMetaObject, pyqtSlot
 from PyQt5.QtGui import QIcon, QPainter, QColor, QFont, QPixmap, QImage
 from PyQt5.QtWidgets import (
@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy, QLabel, QDialog, QStackedLayout, QSplitter
 )
 
-from FACE_DETECTION.face import FaceDetection
+from FACE_DETECTION.face import FaceRecognition
 from Assistance_Astar.main_assistance import *
 # from frenet_optimal_trajectory import *
 import config as cf
@@ -591,11 +591,15 @@ class MapDisplayFrame(QFrame):
 
         self.init_face_detection()
     def init_face_detection(self):
-        self.face_detector = FaceDetection(
-            "FACE_DETECTION/model/face_detection_yunet_2023mar.onnx"
+        self.face_detector = FaceRecognition(
+            face_detection_model='/home/hoang-anh/Downloads/faceTracking/model/face_detection_yunet_2023mar.onnx',
+            face_recognition_model='/home/hoang-anh/Downloads/faceTracking/model/face_recognition_sface_2021dec.onnx'
         )
+
         self.face_detect_frame_count = 0
         self.face_detect_triggered = False
+        
+        self.player = QMediaPlayer()
 
         self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FPS, 60)  # Điều chỉnh FPS
@@ -616,50 +620,64 @@ class MapDisplayFrame(QFrame):
         if not ret:
             return
 
-        h, w = frame.shape[:2]
-        self.face_detector.detector.setInputSize((w, h))
-        boxes = self.face_detector.detect_faces(frame)
+        results = self.face_detector.detect_and_recognize(frame)
 
-        if len(boxes) > 0:
+        if results:
             self.face_detect_frame_count += 1
+            names_detected = []
+
+            for coords, name in results:
+                x, y, w, h = coords[0], coords[1], coords[2], coords[3]
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                names_detected.append(name)
+
+            if self.face_detect_frame_count >= 8 and not self.face_detect_triggered:
+                self.face_detect_triggered = True
+                self.face_timer.stop()
+                self.camera_timer.start(60) 
+                self.stacked_layout.setCurrentWidget(self.main_widget)
+
+                # Ưu tiên người quen
+                if "Hoang Anh" in names_detected:
+                    self.play_audio("Hoang Anh")
+                elif "Quoc Kha" in names_detected:
+                    self.play_audio("Quoc Kha")
+                else:
+                    self.play_audio("default")  # âm thanh chào chung
+
         else:
             self.face_detect_frame_count = 0
 
-        # Vẽ mặt người lên frame
-        for box in boxes:
-            x, y, bw, bh = box[0], box[1], box[2], box[3]
-            cv2.rectangle(frame, (x, y), (x + bw, y + bh), (0, 255, 0), 2)
-        
-        # Hiển thị ảnh camera
+        # Hiển thị ảnh camera lên QLabel
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         rgb = cv2.resize(rgb, (1080, 720))
-        
         qimg = QImage(rgb.data, rgb.shape[1], rgb.shape[0], rgb.shape[1] * 3, QImage.Format_RGB888)
         self.camera_label.setPixmap(QPixmap.fromImage(qimg))
-        self.camera_timer.stop()
-        if self.face_detect_frame_count >= 8:
-            self.face_detect_triggered = True
-            self.camera_timer.start(60) 
-            self.face_timer.stop()
 
-            # Chuyển sang giao diện chính trước
-            self.stacked_layout.setCurrentWidget(self.main_widget)
-
-            # Tạo QTimer để phát âm thanh sau khi chuyển giao diện
-            QTimer.singleShot(300, self.play_audio)
-    def play_audio(self):
-        # Dừng camera nếu đang mở
-        """
-        Phát âm thanh sau khi phát hiện khuôn mặt.
-
-        Dừng camera nếu đang mở, sau đó phát âm thanh từ file "VISUALIZATION/sound/output.wav".
-        """
+    def play_audio(self, name):
         if self.cap.isOpened():
             self.cap.release()
 
-        # Phát âm thanh
-        wave_obj = sa.WaveObject.from_wave_file("VISUALIZATION/sound/output.wav")
-        wave_obj.play().wait_done()
+        def play():
+            if name == "Hoang Anh":
+                file_path = "VISUALIZATION/sound/forward_collision_warning.wav"
+            elif name == "Quoc Kha":
+                file_path = "/mnt/.../micro_sound.wav"
+            else:
+                file_path = "VISUALIZATION/sound/output.wav"  # Âm thanh chung
+
+            wave_obj = sa.WaveObject.from_wave_file(file_path)
+            wave_obj.play()
+
+        play()
+
+    # def play_audio(self, file_path):
+    #     url = QUrl.fromLocalFile(file_path)
+    #     content = QMediaContent(url)
+    #     self.player.setMedia(content)
+    #     self.player.setVolume(100)
+    #     self.player.play()
 
     def show_camera_view(self):
         # # Hiển thị ảnh từ cf.image

@@ -1,6 +1,7 @@
 import  numpy as  np
 import math
 from OPTIMAL_TRAJECTORY.CUBIC_PLANNER import cubic_spline_planner 
+
 # Parameter 
 MAX_SPEED = 20.0 / 3.6    # maximum speed [m/s]
 MAX_ACCEL = 3             # maximum acceleration [m/ss]
@@ -13,7 +14,7 @@ MINT = 4.0                # min prediction time [m]
 TARGET_SPEED = 16 / 3.6   # target speed [m/s]
 D_T_S = 0.1 / 3.6         # target speed sampling length [m/s]
 N_S_SAMPLE = 1            # sampling number of target speed
-ROBOT_RADIUS = 2.3       # robot radius [m]
+ROBOT_RADIUS = 2.2       # robot radius [m]
 
 # cost weights Trajectory 
 KJ = 0.1
