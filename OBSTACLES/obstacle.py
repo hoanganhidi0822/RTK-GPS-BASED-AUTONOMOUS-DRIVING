@@ -8,11 +8,12 @@ from ultralytics import YOLO
 import time
 from scipy.spatial.transform import Rotation as R
 import config as cf
-import collections
+
+from collections import deque
 # from main import camera_index
 # from visualize import visualize
 
-camera_index = 2
+camera_index = 0
 
 cf.det_image = np.zeros((480, 640, 3))
 cf.depth_image = np.zeros((480, 640, 3))
@@ -84,7 +85,8 @@ map1, map2 = cv2.initUndistortRectifyMap(camera_matrix, dist_coeffs, None, camer
 # Khởi tạo danh sách vật cản
 obstacles = []
 persons = []
-    
+fps_window = deque(maxlen=30)  # lưu 30 giá trị FPS gần nhất
+
 def process_depth():
     # Open camera
     max_retries = 5
@@ -120,17 +122,14 @@ def process_depth():
 
         # Infer depth
         i=i+1
-
         if count_frame % 3 == 0:
             count_frame = 0
             with torch.no_grad(), torch.amp.autocast('cuda'):  
                 results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2])
                 depth_map = depth_anything.infer_image(raw_frame, args.input_size)
         
-        
         depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 65535
         depth_visulize = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 255.0
-        
         
         # Run YOLO Detector
         for predictions in results:
@@ -182,7 +181,7 @@ def process_depth():
                 
             
         depth_display = depth_visulize.astype(np.uint8)
-       
+    
         depth_display = (cmap(depth_display)[:, :, :3] * 255).astype(np.uint8)  # Bỏ [:, :, ::-1]
 
         if depth_display.shape[:2] != raw_frame.shape[:2]:
@@ -194,20 +193,13 @@ def process_depth():
         cf.depth_image = depth_visulize
         obstacles = []
         persons = []
-        # # Visualization
-        alpha = 0.95
+
+                # Tính FPS trung bình mượt
+        # Trong vòng lặp while:
         delta_t = time.time() - time_start
-        if delta_t > 0:
-            fps = (1 - alpha) * fps + alpha * (1 / delta_t)
-        
-        print(f"percept fps: {fps}")
-        
-    #     cv2.imshow("img", combined_frame)
-    #     cv2.waitKey(1)
-        
-    # cap.release()
-    # cv2.destroyAllWindows()
-# if __name__ == '__main__':
-#     process_depth()
-    
-    
+        instantaneous_fps = 1.0 / delta_t if delta_t > 0 else 0.0
+        fps_window.append(instantaneous_fps)
+
+        if len(fps_window) == fps_window.maxlen:
+            avg_fps = sum(fps_window) / len(fps_window)
+            print(f" --- [INFO] Perception FPS: {avg_fps:.2f}")

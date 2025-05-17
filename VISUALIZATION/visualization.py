@@ -632,7 +632,7 @@ class MapDisplayFrame(QFrame):
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
                 names_detected.append(name)
 
-            if self.face_detect_frame_count >= 8 and not self.face_detect_triggered:
+            if self.face_detect_frame_count >= 12 and not self.face_detect_triggered:
                 self.face_detect_triggered = True
                 self.face_timer.stop()
                 self.camera_timer.start(60) 

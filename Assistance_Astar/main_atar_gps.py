@@ -574,7 +574,7 @@ def remove_duplicate_waypoints(file_path):
 
 def run_map(name):
     # Example usage 
-    simulation = 0
+    simulation = 1
     if simulation != 1:
         lat, lon, _,_,car_heading, sat_count = get_gps_data(gps_ser)
         
