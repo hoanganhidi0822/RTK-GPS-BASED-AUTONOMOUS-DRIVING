@@ -289,10 +289,7 @@ def main():
         while optimal_path is None:          
             print("optimal_path is None !!!")
             lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
-        
-            # Project the current position onto the target course
-            # projected_point = project_onto_path(x, y, tx, ty)
-
+   
             new_obstacles =  cf.obstacles
             # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
             if len(new_obstacles): 
@@ -342,18 +339,6 @@ def main():
             c_d_d = optimal_path.d_d[1]
             c_d_dd = optimal_path.d_dd[1]
             c_speed = car_speed    
-            
-
-            # # ------- CALCULATE TARGET SPEED ------- #
-            # distance_to_goal = np.hypot(tx[-1] - x, ty[-1] - y)
-
-            # if distance_to_goal < 3:
-            #     target_speed = max(0, slow_down_speed(distance_to_goal, 8))
-            # else:
-            #     target_speed = 8
-
-            # if len(obstacles):
-            #     target_speed = min(target_speed, 6)
 
             ################## SPEED CONTROL ##################################################################################################
             # Giảm tốc độ khi vào cua
@@ -374,9 +359,6 @@ def main():
             except Exception as e:
                 print("[WARNING] Curvature calc failed:", e)
 
-
-
-            
             # --------- KHỞI TẠO BIẾN TOÀN CỤC --------- #
             if 'prev_gps_speed' not in globals():
                 prev_gps_speed = gps_speed
@@ -434,7 +416,6 @@ def main():
             steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
 
-
             should_stop = False
             # 1. Camera lỗi
             if cf.camera_error == 1:
@@ -470,6 +451,7 @@ def main():
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
+                    gps_speed = "GPS ERROR!"
                     should_stop = True
 
             if should_stop:
@@ -492,10 +474,8 @@ def main():
             play__.wait_done()
             return
         
-
         obstacles = []   
         persons = [] 
-
 
         # FPS
         alpha = 0.8

@@ -378,7 +378,7 @@ class VehicleStatusFrame(QFrame):
             color = "red"
 
         self.gps_status.setStyleSheet(
-            f"font-size: 14px; color: {color}; margin-left: 6px;"
+            f"font-size: 16px; color: {color}; margin-left: 6px;"
         )
 
     def update_vehicle_status(self, status_text):
