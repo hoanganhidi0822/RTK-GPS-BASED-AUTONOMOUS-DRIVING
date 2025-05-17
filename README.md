@@ -9,7 +9,7 @@ This project integrates high-precision **RTK-GPS** positioning with real-time **
 ### 🔧 Components
 
 - **RTK-GPS**: For centimeter-level positioning accuracy.
-- **YOLOv8 / DepthAnything**: For obstacle detection and depth estimation.
+- **YOLOv11 / DepthAnything-V2**: For obstacle detection and depth estimation.
 - **Frenet Optimal Trajectory**: For smooth and safe path planning around obstacles.
 - **Pure Pursuit Controller**: For trajectory tracking.
 - **PyQt5 GUI**: Visual interface showing GPS map, obstacle positions, and live vehicle state.

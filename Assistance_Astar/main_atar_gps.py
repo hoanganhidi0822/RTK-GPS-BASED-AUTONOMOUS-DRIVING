@@ -35,7 +35,7 @@ class Graph:
         self.segments = [
             ("A", "BB"),("BB", "A"), ("BB", "B"), ("B", "TT"),("TT", "C"), ("C", "D"), ("C", "CC"),("CC", "C"),("C", "TT"),("TT", "B"),("B", "BB"),
             ("CC", "F"), ("D", "DD"), ("DD", "E"),("E", "F"), ("F", "G"), ("G", "F"),("F", "CC"),
-            ("G", "H"),("H", "G"), ("H", "I"),("H", "I"), ("I", "K"), ("K", "I"),("K", "A"),("A", "K"), ("J", "B"), ("B", "J")
+            ("H", "G"), ("H", "I"), ("I", "K"), ("K", "I"),("K", "A"), ("J", "B"), ("B", "J")
         ]
         self.threshold = 10  # Ngưỡng khoảng cách (mét)
         self.graph = {}

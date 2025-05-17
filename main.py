@@ -402,7 +402,7 @@ def main():
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
             if gps_speed > 8:
                 target_speed = 1  # Giảm tốc
-            elif gps_speed < 6.0:
+            elif gps_speed < 6.5:
                 target_speed = 9  # Tăng tốc
             else:
                 target_speed = 8  # Duy trì tốc độ ổn định
