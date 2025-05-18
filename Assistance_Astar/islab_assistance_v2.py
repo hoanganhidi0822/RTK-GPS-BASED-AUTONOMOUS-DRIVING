@@ -13,17 +13,12 @@ import speech_recognition as sr
 from google import genai
 
 cf.cf_destination = "none"
-url = 'https://api.fpt.ai/hmi/tts/v5'
-
-headers = {
-    'api-key': 'K5jOdAj46wLFqOHkgDwROHE7AFs7ZlCx',
-    'speed': '0',
-    'voice': 'banmai'
-}
 
 class virtual_assistance:
     def __init__(self):
         print("Bắt đầu trợ lý ảo.")
+         # Gửi văn bản sang Gemini để phân loại
+        client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
         self.count_call = 0
 
     def get_record(self):
@@ -93,8 +88,7 @@ class virtual_assistance:
                 print("Lỗi nhận dạng:", e)
                 return "Xin lỗi, tôi không thể nhận dạng giọng nói lúc này."
 
-        # Gửi văn bản sang Gemini để phân loại
-        client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
+       
 
         prompt = """
                 # Vai trò, bản thân và Bối cảnh
