@@ -166,12 +166,12 @@ def process_depth():
 
                 x_real, z_real = real_coords[0], real_coords[2]
             
-                if z_real < 17:
+                if z_real < 25:
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
 
                     # Hiển thị thông tin
-                    # cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
-                    #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
                 
                 if class_id == 0:

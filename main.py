@@ -20,16 +20,12 @@ import simpleaudio as sa
 
 
 # --------------- UART ------------------------- #
-# gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-# stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
-gps_ser = 1
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
+# gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
-# ---------------- CUDA ------------------------ #
-# cuda.init()  # Khởi tạo CUDA
-# device = cuda.Device(0)  # Chọn GPU đầu tiên
-# context = device.make_context()  # Tạo context CUDA trong thread
 
 # ---------------- Config init ------------------ #
 cf.latitude = None
@@ -86,11 +82,11 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    # lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Single", 15
-    time.sleep(0.1)
+    # lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Single", 15
+    # time.sleep(0.1)
 
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -165,7 +161,7 @@ def main():
     rtk_bad_start = None
     rtk_resume_start = None
 
-    # stm32(angle=int(0), speed=int(0), brake_state=0)
+    stm32(angle=int(0), speed=int(0), brake_state=0)
 
     # Wait Assistance
     while cf.record:
@@ -251,7 +247,7 @@ def main():
 
         # Người vẫn còn sau 1.5 giây => dừng xe
         elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-            # stm32(angle=int(-0), speed=int(0), brake_state=0)
+            stm32(angle=int(-0), speed=int(0), brake_state=0)
             play_ = collision_sound.play()
             play_.wait_done()
             # stm32(angle=int(-0), speed=0, brake_state=0)
@@ -313,29 +309,18 @@ def main():
                 # stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                # stm32(angle=0, speed=0, brake_state=1)
+                stm32(angle=0, speed=0, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obs = [] 
                 count_none = 0
         # ---------------------- Pure Pursuit Control ------------------------ #
         if x is not None:
             # Pure Pursuit control: use the optimal path from Frenet
-
-            if len(obstacles):
-                
-                lookahead_distance = 4.5
-            else:
-                lookahead_distance = 4.5
-            
             car_steer,  lookahead_point = pure_pursuit_control_frenet(float(lat), float(lon),
                                                                         optimal_path, x, y,yaw, lookahead_distance, L)
             
-            # Project the current position onto the target course
-            # projected_point = project_onto_path(x, y, tx, ty)
-            # s0 , _, __, ___ = cartesian_to_frenet(projected_point[0], projected_point[1], yaw, csp)
             s0 , c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
             
-            # c_d = optimal_path.d[1]
             c_d_d = optimal_path.d_d[1]
             c_d_dd = optimal_path.d_dd[1]
             c_speed = car_speed    
@@ -456,12 +441,12 @@ def main():
 
             if should_stop:
                 pass
-                # stm32(angle=int(-0), speed=int(0), brake_state=0)
+                stm32(angle=int(-0), speed=int(0), brake_state=0)
             else:
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    # stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
+                    stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
                     count = 0
             ############################################################################################################################ 
             persons = [] 
