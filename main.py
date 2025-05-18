@@ -4,7 +4,6 @@ import time
 import numpy as np
 import threading
 import config as cf
-import pycuda.driver as cuda
 from RTK_GPS.GPS_module import *
 from HD_MAP.HDMAP import *
 from CONTROLLER.utils.communication import STM32
@@ -14,8 +13,6 @@ from OBSTACLES.obstacle import process_depth
 import sys
 from VISUALIZATION.visualization import *
 from VOICE.voice import *
-
-
 import simpleaudio as sa
 
 
@@ -85,7 +82,7 @@ def update_state(ser):
     lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    # lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Single", 15
+    # lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Float", 15
     # time.sleep(0.1)
 
     # -------- Convert data to X Y frame --------- #
@@ -419,6 +416,7 @@ def main():
                     rtk_bad_start = current_time
                     rtk_resume_start = None
                     print("[WARNING] RTK mất Fixed – Dừng xe ngay!")
+                gps_speed = "SAFE MODE ON"
                 should_stop = True
 
             else:  # cf.rtk_status == "RTK Fixed"
@@ -435,7 +433,7 @@ def main():
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
-                    gps_speed = "GPS ERROR!"
+                    gps_speed = "SAFE MODE ON"
                     should_stop = True
 
             if should_stop:

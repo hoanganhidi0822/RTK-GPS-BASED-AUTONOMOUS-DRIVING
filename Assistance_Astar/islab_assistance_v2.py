@@ -13,22 +13,33 @@ import speech_recognition as sr
 from google import genai
 
 cf.cf_destination = "none"
-
+client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
+# WARM-UP Gemini
+try:
+    warmup_prompt = "Bạn có thể giới thiệu bản thân không?"
+    _ = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=[warmup_prompt]
+    )
+    print("✅ Gemini đã được warm-up.")
+except Exception as e:
+    print("⚠️ Warm-up Gemini thất bại:", e)
 class virtual_assistance:
     def __init__(self):
         print("Bắt đầu trợ lý ảo.")
-         # Gửi văn bản sang Gemini để phân loại
-        client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
+        # self.client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
         self.count_call = 0
+        self.recognizer = sr.Recognizer()
+        
 
     def get_record(self):
         
         CHANNELS = 1
         RATE = 16000
-        DURATION_LIMIT = 5
+        DURATION_LIMIT = 4
         CHUNK = 1024
         OUTPUT_FILENAME = "recorded_audio_1.wav"
-        SILENCE_THRESHOLD = 4000
+        SILENCE_THRESHOLD = 2000
         SILENCE_DURATION = 1.1
 
         print("Đang ghi âm...")
@@ -75,12 +86,26 @@ class virtual_assistance:
 
         print(f"✅ File đã được lưu: {OUTPUT_FILENAME}")
 
+    def classify_by_keywords(self,text):
+        text_lower = text.lower()
+        if any(k in text_lower for k in ["khu c", "khuê xi", "kêu xi", "xê"]):
+            return "khu_c"
+        if any(k in text_lower for k in ["khu d", "khu dê", "đê"]):
+            return "khu_d"
+        if any(k in text_lower for k in ["trung tâm", "tòa nhà chính", "nhà trung tâm"]):
+            return "trung_tam_truoc"
+        if any(k in text_lower for k in ["việt đức", "việt đứt", "tòa nhà đức", "đứt", "đức"]):
+            return "viet_duc"
+        if any(k in text_lower for k in ["xưởng gỗ", "xưởng mộc", "chỗ làm gỗ"]):
+            return "go"
+        return None
+
     def understanding_record(self):
-        recognizer = sr.Recognizer()
+        
         with sr.AudioFile("recorded_audio_1.wav") as source:
-            audio = recognizer.record(source)
+            audio = self.recognizer.record(source)
             try:
-                user_text = recognizer.recognize_google(audio, language='vi-VN')
+                user_text = self.recognizer.recognize_google(audio, language='vi-VN')
                 print("📝 Văn bản nhận được:", user_text)
             except sr.UnknownValueError:
                 return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
@@ -100,7 +125,7 @@ class virtual_assistance:
                 1.  **Xác định yêu cầu di chuyển đến địa điểm cụ thể (ưu tiên nhận diện từ khóa):**
                     * Nếu người dùng muốn đến **Khu C** (nhận diện các từ khóa như "Khu C", "khuê xi", "kêu xi", "xê"), phản hồi: `khu_c`
                     * Nếu người dùng muốn đến **Khu D** (nhận diện các từ khóa như "Khu D", "khu dê", "đê"), phản hồi: `khu_d`
-                    * Nếu người dùng muốn đến **Tòa nhà Trung tâm** (nhận diện các từ khóa như "Trung tâm", "tòa nhà chính", "nhà trung tâm"), phản hồi: `trung_tam`
+                    * Nếu người dùng muốn đến **Tòa nhà Trung tâm** (nhận diện các từ khóa như "Trung tâm", "tòa nhà chính", "nhà trung tâm"), phản hồi: `trung_tam_truoc`
                     * Nếu người dùng muốn đến **Tòa nhà Việt Đức** (nhận diện các từ khóa như "Việt Đức", "việt đứt", "tòa nhà Đức", "đứt", "Đức"), phản hồi: `viet_duc`
                     * Nếu người dùng muốn đến **Xưởng Gỗ** (nhận diện các từ khóa như "Xưởng Gỗ", "xưởng mộc", "chỗ làm gỗ"), phản hồi: `go`
                     
@@ -120,13 +145,22 @@ class virtual_assistance:
                 * **Chuyển tiếp mượt mà:** Khi người dùng đặt câu hỏi không liên quan đến di chuyển, hãy lịch sự chuyển hướng về nhiệm vụ chính của bạn nhưng vẫn đảm bảo có sự kết nối và chuyển tiếp tự nhiên với câu hỏi của họ.
                     * *Ví dụ phản hồi:* "Tôi chỉ là một chiếc xe tự hành thông minh, tôi không thể biết thời tiết hôm nay thế nào. Nhưng tôi rất sẵn lòng đưa bạn đi trong khuôn viên trường. Bạn muốn đến địa điểm nào ạ?" hoặc "Đó là một câu hỏi thú vị! Tuy nhiên, nhiệm vụ chính của tôi là di chuyển một cách an toàn, với khả năng tự động điều chỉnh để tránh mọi vật cản. Bạn có muốn tôi đưa bạn đến một địa điểm nào đó trong trường không?"
             """
+        dest = self.classify_by_keywords(user_text)
+        if dest:
+            return dest
+        else:
+            # Chỉ gọi Gemini nếu không phân loại được bằng từ khóa
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=[prompt, user_text]
+            )
+            return response.text
+        # response = client.models.generate_content(
+        #     model='gemini-2.0-flash',
+        #     contents=[prompt, user_text]
+        # )
 
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=[prompt, user_text]
-        )
-
-        return response.text
+        # return response.text
 
     def get_speech(self, text):
         is_run = False
@@ -135,7 +169,7 @@ class virtual_assistance:
         destination = {
             'khu_c':     "tôi sẽ đưa bạn đến Khu c nhé.",
             'khu_d':     "tôi sẽ đưa bạn đến Khu d nhé.",
-            'trung_tam': "tôi sẽ đưa bạn đến tòa nhà Trung tâm nhé.",
+            'trung_tam_truoc': "tôi sẽ đưa bạn đến tòa nhà Trung tâm nhé.",
             'viet_duc':  "tôi sẽ đưa bạn đến tòa Việt Đức nhé.",
             'go':        "tôi sẽ đưa bạn đến xưởng gỗ nhé."
         }
@@ -158,17 +192,7 @@ class virtual_assistance:
 
         # ====== Chuyển MP3 sang WAV để play bằng simpleaudio ======
         sound = AudioSegment.from_mp3("output.mp3")
-
-        # Tạo hiệu ứng echo
-        num_echoes = 5
-        delay_ms = 100
-        decay = 20
-        reverb = sound
-        for i in range(1, num_echoes + 1):
-            echo = AudioSegment.silent(duration=delay_ms * i) + (sound - decay * i)
-            reverb = reverb.overlay(echo)
-
-        reverb.export("output.wav", format="wav")
+        sound.export("output.wav", format="wav")
 
         # ====== Phát âm thanh ======
         try:

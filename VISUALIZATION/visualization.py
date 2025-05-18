@@ -320,7 +320,7 @@ class VehicleStatusFrame(QFrame):
         gps_layout.setAlignment(Qt.AlignRight)
 
         self.gps_icon = QLabel()
-        pixmap = QPixmap("VISUALIZATION/icon/gps.png").scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = QPixmap("VISUALIZATION/icon/gps.png").scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.gps_icon.setPixmap(pixmap)
         gps_layout.addWidget(self.gps_icon)
 
@@ -340,7 +340,8 @@ class VehicleStatusFrame(QFrame):
         self.vehicle_status_label = QLabel("Trạng thái xe: Đang khởi tạo")
         self.vehicle_status_label.setAlignment(Qt.AlignCenter)
         self.vehicle_status_label.setWordWrap(True)  # Cho phép xuống dòng nếu cần
-        self.vehicle_status_label.setMaximumWidth(5000)  # Giới hạn chiều rộng
+        self.vehicle_status_label.setMaximumWidth(7000)  # Giới hạn chiều rộng
+        
         self.vehicle_status_label.setStyleSheet("""
             font-size: 70px;
             font-weight: bold;
@@ -371,18 +372,34 @@ class VehicleStatusFrame(QFrame):
         self.gps_status.setText(status_text)
 
         if "Fixed" in status_text:
-            color = "green"
+            color = "lightgreen"
         elif "Float" in status_text:
             color = "orange"
         else:
             color = "red"
 
         self.gps_status.setStyleSheet(
-            f"font-size: 16px; color: {color}; margin-left: 6px;"
+            f"font-size: 24px; color: {color}; margin-left: 6px;font-weight: bold;"
         )
 
     def update_vehicle_status(self, status_text):
+
+        if isinstance(status_text, (int, float)):
+
+            self.vehicle_status_label.setStyleSheet("""
+                font-size: 70px;
+                font-weight: bold;
+                color: #333;
+            """)
+        else:
+            self.vehicle_status_label.setStyleSheet("""
+                font-size: 70px;
+                font-weight: bold;
+                color: lightgreen;
+            """)
+
         self.vehicle_status_label.setText(f"{status_text}")
+
 
 
 class VehicleDisplayFrame(QFrame):

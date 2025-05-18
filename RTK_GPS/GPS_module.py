@@ -66,7 +66,7 @@ def get_gps_data(ser):
                         elif fix_quality == 1:
                             rtk_status = "Single"
                         else:
-                            rtk_status = "No Fix"
+                            rtk_status = "GPS Weak"
 
                 elif gps_data.startswith("$GPVTG"):
                     if len(gps_data_split) > 7 and gps_data_split[7]:
