@@ -215,7 +215,6 @@ def main():
         if x == None:
             continue
 
-
         # --------------------   Update person state  ------------------- #
         new_persons = cf.persons
         # Chỉ cập nhật nếu có dữ liệu mới hợp lệ

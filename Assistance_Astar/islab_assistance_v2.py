@@ -2,11 +2,9 @@ import os
 import wave
 import sounddevice as sd
 import numpy as np
-# from gtts import gTTS
+import asyncio
+import edge_tts
 import time
-import requests
-import json
-# from playsound import playsound
 import config as cf
 import noisereduce as nr
 from pydub import AudioSegment
@@ -15,7 +13,6 @@ import speech_recognition as sr
 from google import genai
 
 cf.cf_destination = "none"
-
 url = 'https://api.fpt.ai/hmi/tts/v5'
 
 headers = {
@@ -30,6 +27,7 @@ class virtual_assistance:
         self.count_call = 0
 
     def get_record(self):
+        
         CHANNELS = 1
         RATE = 16000
         DURATION_LIMIT = 5
@@ -38,7 +36,7 @@ class virtual_assistance:
         SILENCE_THRESHOLD = 4000
         SILENCE_DURATION = 1.1
 
-        print("🔴 Đang ghi âm...")
+        print("Đang ghi âm...")
 
         frames = []
         silence_start = None
@@ -97,19 +95,7 @@ class virtual_assistance:
 
         # Gửi văn bản sang Gemini để phân loại
         client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
-        # prompt = """ Bạn là trợ lý ảo trên xe tự hành của phòng thí nghiệm hệ thống thông minh trường đại học sư phạm kỹ thuật thành phố Hồ Chí Minh,  
-        #             lấy nội dung đoạn hôi thoại trên, người dùng có 3 nhu cầu hãy phân loại thành 3 loại bên dưới: 
-        #             - bạn có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ thì trả về đoạn text tương ứng khu_c, khu_d, trung_tam, viet_duc, go
 
-        #             Đây là thông tin của bạn:
-        #             - bạn có thể chở mọi người đến các địa điểm sau: khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ của trường đại học sư phạm kỹ thuật thành phố Hồ Chí Minh.
-        #             - nếu có câu hỏi nào khác về bạn hãy trả lời một cách hài hước nhưng vẫn lịch sự.
-
-        #             lưu ý khi phản hồi:
-        #             - không kèm các icon trong nội dung.
-        #             - phản hồi xúc tích, không lặp toàn bộ prompt này.
-        #             - nếu không nhận được yêu cầu hãy phản hồi: tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ.
-        #             """
         prompt = """
                 # Vai trò, bản thân và Bối cảnh
                 Bạn là một trợ lý ảo thông minh, được tích hợp trực tiếp vào xe tự hành của phòng thí nghiệm Hệ thống Thông minh tại Trường Đại học Sư phạm Kỹ thuật TP.HCM. Bạn không chỉ là phần mềm mà còn đại diện cho chính chiếc xe, có khả năng đưa đón người dùng trong khuôn viên trường. Được trang bị công nghệ tiên tiến, xe có khả năng tự động nhận diện và tạo quỹ đạo an toàn để tránh các vật cản trên đường đi. Bạn hoàn toàn có thể yên tâm về sự an toàn trong suốt hành trình.
@@ -118,8 +104,8 @@ class virtual_assistance:
                 Phân tích yêu cầu của người dùng từ đoạn hội thoại và phản hồi theo một trong ba trường hợp sau:
 
                 1.  **Xác định yêu cầu di chuyển đến địa điểm cụ thể (ưu tiên nhận diện từ khóa):**
-                    * Nếu người dùng muốn đến **Khu C** (nhận diện các từ khóa như "Khu C", "khuê xi", "kêu xi"), phản hồi: `khu_c`
-                    * Nếu người dùng muốn đến **Khu D** (nhận diện các từ khóa như "Khu D", "khu dê"), phản hồi: `khu_d`
+                    * Nếu người dùng muốn đến **Khu C** (nhận diện các từ khóa như "Khu C", "khuê xi", "kêu xi", "xê"), phản hồi: `khu_c`
+                    * Nếu người dùng muốn đến **Khu D** (nhận diện các từ khóa như "Khu D", "khu dê", "đê"), phản hồi: `khu_d`
                     * Nếu người dùng muốn đến **Tòa nhà Trung tâm** (nhận diện các từ khóa như "Trung tâm", "tòa nhà chính", "nhà trung tâm"), phản hồi: `trung_tam`
                     * Nếu người dùng muốn đến **Tòa nhà Việt Đức** (nhận diện các từ khóa như "Việt Đức", "việt đứt", "tòa nhà Đức", "đứt", "Đức"), phản hồi: `viet_duc`
                     * Nếu người dùng muốn đến **Xưởng Gỗ** (nhận diện các từ khóa như "Xưởng Gỗ", "xưởng mộc", "chỗ làm gỗ"), phản hồi: `go`
@@ -167,62 +153,42 @@ class virtual_assistance:
         else:
             text_respond = text
 
-        print("phản hồi: ", text_respond)
+        print("Phản hồi:", text_respond)
 
-        # Gửi yêu cầu API
-        response = requests.post(url, data=text_respond.encode('utf-8'), headers=headers)
+        # ====== Dùng edge-tts để chuyển văn bản thành âm thanh ======
+        async def speak(text):
+            communicate = edge_tts.Communicate(text, voice="vi-VN-HoaiMyNeural")
+            await communicate.save("output.mp3")
 
-        # Chuyển đổi phản hồi thành JSON
-        response_data = json.loads(response.text)
+        asyncio.run(speak(text_respond))
 
-        # Lấy URL file âm thanh
-        audio_url = response_data.get("async")
+        # ====== Chuyển MP3 sang WAV để play bằng simpleaudio ======
+        sound = AudioSegment.from_mp3("output.mp3")
 
-        if audio_url:
-            print("Tải file từ:", audio_url)
-            for attempt in range(5):
-                audio_response = requests.get(audio_url, allow_redirects=True)
-                if audio_response.status_code == 200 and audio_response.content:
-                    with open("output.mp3", "wb") as f:
-                        f.write(audio_response.content)
-                    print("Tải xuống thành công: output.mp3")
+        # Tạo hiệu ứng echo
+        num_echoes = 5
+        delay_ms = 100
+        decay = 20
+        reverb = sound
+        for i in range(1, num_echoes + 1):
+            echo = AudioSegment.silent(duration=delay_ms * i) + (sound - decay * i)
+            reverb = reverb.overlay(echo)
 
-                    # Convert MP3 to WAV
-                    sound = AudioSegment.from_mp3("output.mp3")
-                    # Số tầng echo
-                    num_echoes = 5
-                    delay_ms = 100  # khoảng cách giữa các tầng echo
-                    decay = 20       # mức giảm âm lượng mỗi lần lặp (dB)
+        reverb.export("output.wav", format="wav")
 
-                    # Khởi tạo âm thanh tổng với âm gốc
-                    reverb = sound
+        # ====== Phát âm thanh ======
+        try:
+            voice_obj = sa.WaveObject.from_wave_file("output.wav")
+            play_voice = voice_obj.play()
+            play_voice.wait_done()
+        except Exception as e:
+            print("Lỗi khi phát âm thanh:", e)
+        finally:
+            if os.path.exists("output.mp3"):
+                os.remove("output.mp3")
+            if os.path.exists("output.wav"):
+                os.remove("output.wav")
 
-                    # Thêm các tầng echo
-                    for i in range(1, num_echoes + 1):
-                        echo = AudioSegment.silent(duration=delay_ms * i) + (sound - decay * i)
-                        reverb = reverb.overlay(echo)
-
-                    # Lưu thành WAV
-                    reverb.export("output.wav", format="wav")
-
-                    # Play WAV
-                    try:
-                        voice_obj = sa.WaveObject.from_wave_file("output.wav")
-                        play_voice = voice_obj.play()
-                        play_voice.wait_done()
-                    except Exception as e:
-                        print("Lỗi khi phát âm thanh:", e)
-                    finally:
-                        os.remove("output.mp3")
-                        os.remove("output.wav")
-                    break
-                else:
-                    print(f"Lần {attempt+1}: chưa có file. Thử lại sau 1 giây...")
-                    time.sleep(1)
-            else:
-                print("Không tải được file sau nhiều lần thử.")
-        else:
-            print("Không tìm thấy URL âm thanh!")
         return is_run
 
     def run(self):

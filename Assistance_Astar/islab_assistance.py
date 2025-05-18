@@ -138,11 +138,11 @@ class virtual_assistance:
         print(f"Nhận được text: {repr(text)}")
 
         destination = {
-            'khu_c': "Tôi sẽ đưa bạn đến Khu c. ",
-            'khu_d': "Tôi sẽ đưa bạn đến Khu d. ",
+            'khu_c':     "Tôi sẽ đưa bạn đến Khu c. ",
+            'khu_d':     "Tôi sẽ đưa bạn đến Khu d. ",
             'trung_tam': "Tôi sẽ đưa bạn đến tòa nhà Trung tâm.",
-            'viet_duc': "Tôi sẽ đưa bạn đến tòa Việt Đức.",
-            'go': "Tôi sẽ đưa bạn đến xưởng gỗ."
+            'viet_duc':  "Tôi sẽ đưa bạn đến tòa Việt Đức.",
+            'go':        "Tôi sẽ đưa bạn đến xưởng gỗ."
         }
 
         if text.strip().lower() in destination:
