@@ -201,6 +201,8 @@ def main():
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
     alpha_steering = 0.82   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+
+    
     # --- Main Loop --- #
     while True:
         

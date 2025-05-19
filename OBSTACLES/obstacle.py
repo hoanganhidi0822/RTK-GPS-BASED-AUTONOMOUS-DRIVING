@@ -8,10 +8,7 @@ from ultralytics import YOLO
 import time
 from scipy.spatial.transform import Rotation as R
 import config as cf
-
 from collections import deque
-# from main import camera_index
-# from visualize import visualize
 
 camera_index = 2
 
@@ -20,6 +17,7 @@ cf.depth_image = np.zeros((480, 640, 3))
 cf.obstacles = []
 cf.persons = []
 cf.camera_error = 0
+
 # Select device
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(f"Using device: {device}")
@@ -43,7 +41,6 @@ model_configs = {
     'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]},
     'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
 }
-
 
 # Cấu hình tối ưu cho GPU
 def optimize_for_gpu(model):
@@ -73,15 +70,13 @@ def optimize_for_gpu(model):
 
 depth_anything = DepthAnythingV2(**model_configs[args.encoder])
 depth_anything.load_state_dict(torch.load(f'OBSTACLES/checkpoints/depth_anything_v2_{args.encoder}.pth', map_location='cpu'))
-# depth_anything = depth_anything.to(device).eval()
 depth_anything = optimize_for_gpu(depth_anything).eval()
-
-
 
 cmap = matplotlib.colormaps.get_cmap('Spectral_r')
 camera_matrix = np.loadtxt('OBSTACLES/camera_param/camera_matrix.txt',dtype=np.float32)
 dist_coeffs = np.loadtxt('OBSTACLES/camera_param/distortion_coefficients.txt',dtype=np.float32)
 map1, map2 = cv2.initUndistortRectifyMap(camera_matrix, dist_coeffs, None, camera_matrix, (640, 480), cv2.CV_16SC2)
+
 # Khởi tạo danh sách vật cản
 obstacles = []
 persons = []
@@ -111,21 +106,20 @@ def process_depth():
     while 1:
         time_start = time.time()
         ret, raw_frame = cap.read()
-        count_frame += 1
-        raw_frame = cv2.remap(raw_frame, map1, map2, interpolation=cv2.INTER_LINEAR)
-        # raw_frame = cv2.undistort(raw_frame, camera_matrix, dist_coeffs)
-        
         if not ret:
             print("Error: Lost connection to camera")
             cf.camera_error = 1
             break
+
+        count_frame += 1
+        raw_frame = cv2.remap(raw_frame, map1, map2, interpolation=cv2.INTER_LINEAR)
 
         # Infer depth
         i=i+1
         if count_frame % 3 == 0:
             count_frame = 0
             with torch.no_grad(), torch.amp.autocast('cuda'):  
-                results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2])
+                results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
                 depth_map = depth_anything.infer_image(raw_frame, args.input_size)
         
         depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 65535
@@ -135,7 +129,7 @@ def process_depth():
         for predictions in results:
             for bbox in predictions.boxes:
                 class_id = int(bbox.cls.cpu().numpy()[0])
-                if class_id not in [0, 2]:  # 0: person, 2: car
+                if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
                     continue
                 xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
                 depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
@@ -163,7 +157,6 @@ def process_depth():
 
                 rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
                 real_coords = rotation_matrix @ camera_coords
-
                 x_real, z_real = real_coords[0], real_coords[2]
             
                 if z_real < 25:
@@ -173,10 +166,10 @@ def process_depth():
                     cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
-                
+            
                 if class_id == 0:
                     persons.append((x_real, z_real))
-                elif class_id == 2:
+                elif class_id == 2 or class_id == 5 or class_id == 7:
                     obstacles.append((x_real, z_real))
                 
             
