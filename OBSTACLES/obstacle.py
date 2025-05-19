@@ -13,7 +13,7 @@ from collections import deque
 # from main import camera_index
 # from visualize import visualize
 
-camera_index = 0
+camera_index = 2
 
 cf.det_image = np.zeros((480, 640, 3))
 cf.depth_image = np.zeros((480, 640, 3))
