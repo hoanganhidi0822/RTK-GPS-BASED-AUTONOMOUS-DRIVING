@@ -320,7 +320,6 @@ waypoint_files_2_TT = {
     ('H1' , 'CC' )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt",
     ('H1' , 'F'  )  : "Assistance_Astar/MAP/NGHICH/space.txt" ,
 
-    
     ('A'  , 'K'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_1.txt", # 
     ('K'  , 'I'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
     ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
@@ -355,7 +354,6 @@ def load_waypoints(file_path):
     except FileNotFoundError:
         print(f"⚠️ File {file_path} không tồn tại!")
         return []
-
 
 def haversine(lat1, lon1, lat2, lon2):
     """Tính khoảng cách Haversine giữa hai tọa độ."""

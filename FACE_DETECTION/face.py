@@ -20,10 +20,9 @@ class FaceRecognition:
         self.svc = joblib.load('/home/hoang-anh/Downloads/faceTracking/model/svc.pkl')  # Load your SVM classifier
         self.mydict = ['Hoang Anh', 'Quoc Kha']
 
-    def detect_and_recognize(self, frame):
+    def detect_and_recognize(self, frame, threshold=0.8):
         h, w = frame.shape[:2]
-        self.detector.setInputSize((w, h))  # <<< DÒNG CẦN THÊM VÀO
-
+        self.detector.setInputSize((w, h))
         faces = self.detector.detect(frame)
         results = []
 
@@ -33,7 +32,18 @@ class FaceRecognition:
                 face_align = self.recognizer.alignCrop(frame, face)
                 face_feature = self.recognizer.feature(face_align).reshape(1, -1)
                 test_predict = self.svc.predict(face_feature)
-                recognized_name = self.mydict[test_predict[0]]
+
+                # --- Đánh giá độ tin cậy ---
+                try:
+                    scores = self.svc.decision_function(face_feature)
+                    max_score = np.max(scores)
+                    if max_score < threshold:
+                        recognized_name = "Unknown"
+                    else:
+                        recognized_name = self.mydict[test_predict[0]]
+                except:
+                    recognized_name = self.mydict[test_predict[0]]  # fallback nếu không dùng được decision_function
+
                 results.append((coords, recognized_name))
 
         return results
