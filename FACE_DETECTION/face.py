@@ -20,7 +20,7 @@ class FaceRecognition:
         self.svc = joblib.load('/home/hoang-anh/Downloads/faceTracking/model/svc.pkl')  # Load your SVM classifier
         self.mydict = ['Hoang Anh', 'Quoc Kha']
 
-    def detect_and_recognize(self, frame, threshold=0.8):
+    def detect_and_recognize(self, frame, threshold=0.5):
         h, w = frame.shape[:2]
         self.detector.setInputSize((w, h))
         faces = self.detector.detect(frame)
