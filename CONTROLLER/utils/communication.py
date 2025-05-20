@@ -1,5 +1,7 @@
 import serial
+import config as cf
 
+cf.camera_error = 0
 class STM32:
 
     def __init__(self, port='', baudrate=115200):
@@ -22,6 +24,7 @@ class STM32:
             data_to_send = self.preprocess(angle, speed, brake)
             self.stm32.write(data_to_send.encode())
         except (serial.SerialException, OSError) as e:
+            cf.camera_error = 1
             print(f"[ERROR] Serial communication failed: {e}")
         except ValueError as e:
             print(f"[ERROR] Invalid input: {e}")
@@ -29,10 +32,11 @@ class STM32:
 
     @staticmethod
     def parse_angle(angle):
+
         if -35 <= angle <= 35:
             return 100 + abs(angle) if angle < 0 else angle
         else:
-            raise ValueError("Angle must be between -30 and 30.")
+            raise ValueError("Angle must be between -35 and 35.")
 
     @staticmethod
     def parse_speed(speed):

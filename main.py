@@ -18,7 +18,7 @@ import simpleaudio as sa
 
 # --------------- UART ------------------------- #
 gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = stm32(port="/dev/ttyUSB1", baudrate=115200)
+stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
 gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -381,10 +381,25 @@ def main():
             # Reset sau khi xử lý
             obstacles = []
             persons = []
-             # Low-pass filter: target speed
+
+
+            # Cờ trạng thái để phát hiện lần đầu target_speed nhảy lên
+            if 'auto_mode_started' not in globals():
+                auto_mode_started = False
+                speed_filtered = 0
+                steering_filtered = 0
+
+            # Nếu xe đang đứng yên, và target_speed bất ngờ lớn -> đoán là vừa vào AutoMode
+            if not auto_mode_started and gps_speed < 0.5 and target_speed >= 6 and speed_filtered < 2:
+                print("[INFO] Phát hiện chuyển sang AutoMode – Reset tốc độ mượt")
+                speed_filtered = 0  # hoặc gps_speed nếu cần
+                steering_filtered = 0
+                auto_mode_started = True    
+
+            # Low-pass filter: target speed
             speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
 
-            # ----------- CONTROL BLOCK ------------- ####################################################################################
+            # ----------- CONTROL BLOCK ------------- ####################################################
             # Giả sử steering_angle được tính từ hệ thống điều khiển:
             steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
@@ -422,11 +437,14 @@ def main():
                         rtk_bad = False
                         rtk_bad_start = None
                         rtk_resume_start = None
+                        speed_filtered = gps_speed
+                       
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
                     gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                     should_stop = True
+
 
             if should_stop:
                 pass
