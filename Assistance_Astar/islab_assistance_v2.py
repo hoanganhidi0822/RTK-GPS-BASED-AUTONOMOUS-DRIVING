@@ -13,22 +13,15 @@ import speech_recognition as sr
 from google import genai
 from openai import OpenAI
 from pydub.playback import play
+import gc  # Thêm thư viện thu gom rác
+
 client = OpenAI(api_key="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")  # thay YOUR_API_KEY bằng key của bạn
 
 cf.cf_destination = "none"
 # client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
-# WARM-UP Gemini
-try:
-    warmup_prompt = "Bạn có thể giới thiệu bản thân không?"
-    _ = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": warmup_prompt}]
-    )
-    print("✅ GPT-4 đã được warm-up.")
-except Exception as e:
-    print("⚠️ Warm-up GPT-4 thất bại:", e)
 
-import gc  # Thêm thư viện thu gom rác
+
+
 
 class virtual_assistance:
     def __init__(self):
@@ -43,7 +36,7 @@ class virtual_assistance:
         SILENCE_THRESHOLD = 2000
         SILENCE_DURATION = 1.1
 
-        print("🎙️ Đang ghi âm...")
+        print("Đang ghi âm...")
 
         frames = []
         silence_start = None
@@ -59,13 +52,13 @@ class virtual_assistance:
                 if silence_start is None:
                     silence_start = time.time()
                 elif time.time() - silence_start > SILENCE_DURATION:
-                    print("🟢 Khoảng lặng dài, dừng ghi âm!")
+                    print("Khoảng lặng dài, dừng ghi âm!")
                     raise sd.CallbackStop()
             else:
                 silence_start = None
 
             if time.time() - start_time > DURATION_LIMIT:
-                print("⏱️ Hết thời gian ghi tối đa.")
+                print("Hết thời gian ghi tối đa.")
                 raise sd.CallbackStop()
 
         stream = sd.InputStream(callback=callback, samplerate=RATE,
@@ -73,7 +66,7 @@ class virtual_assistance:
         with stream:
             sd.sleep(int(DURATION_LIMIT * 1000))
 
-        print("✅ Ghi âm xong, đang nhận diện...")
+        print("Ghi âm xong, đang nhận diện...")
 
         # Gộp các khung và chuyển thành AudioData
         audio_np = np.concatenate(frames)
@@ -88,9 +81,9 @@ class virtual_assistance:
             print("🗣️ Bạn nói:", text)
             return text
         except sr.UnknownValueError:
-            print("❌ Không nhận dạng được giọng nói.")
+            print("Không nhận dạng được giọng nói.")
         except sr.RequestError as e:
-            print(f"🔌 Lỗi kết nối: {e}")
+            print(f"Lỗi kết nối: {e}")
         finally:
             # Xoá audio_data và ép thu gom rác
             del audio_data, audio_raw
@@ -98,10 +91,9 @@ class virtual_assistance:
 
         return None
 
-
     def classify_by_keywords(self,text):
         text_lower = text.lower()
-        if any(k in text_lower for k in ["khu c", "khuê xi", "kêu xi", "xê","xe"]):
+        if any(k in text_lower for k in ["khu c", "khu xi", "kêu xi", "xê"]):
             return "khu_c"
         if any(k in text_lower for k in ["khu d", "khu dê", "đê"]):
             return "khu_d"
@@ -114,23 +106,12 @@ class virtual_assistance:
         return None
 
     def understanding_record(self,user_text): 
-        # with sr.AudioFile("recorded_audio_1.wav") as source:
-        #     audio = self.recognizer.record(source)
-        #     try:
-        #         user_text = self.recognizer.recognize_google(audio, language='vi-VN')
-        #         print("📝 Văn bản nhận được:", user_text)
-        #     except sr.UnknownValueError:
-        #         return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
-        #     except sr.RequestError as e:
-        #         print("Lỗi nhận dạng:", e)
-        #         return "Xin lỗi, tôi không thể nhận dạng giọng nói lúc này."
 
-        
         if not user_text:
-            print("❌ Không nhận diện được văn bản.")
+            print("Không nhận diện được văn bản.")
             return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
 
-        print("📝 Văn bản nhận được:", user_text)
+        print("Văn bản nhận được:", user_text)
 
         prompt = """
             # Vai trò và Bối cảnh
@@ -175,12 +156,12 @@ class virtual_assistance:
                 ]
             )
             return response.choices[0].message.content.strip()
-        # response = client.models.generate_content(
-        #     model='gemini-2.0-flash',
-        #     contents=[prompt, user_text]
-        # )
+            # response = client.models.generate_content(
+            #     model='gemini-2.0-flash',
+            #     contents=[prompt, user_text]
+            # )
 
-        # return response.text
+            # return response.text
 
     def get_speech(self, text):
         is_run = False

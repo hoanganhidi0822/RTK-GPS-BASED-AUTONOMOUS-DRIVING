@@ -526,20 +526,22 @@ def find_optimal_path(current_position, target_node, waypoint_files_1, waypoint_
                 file_basename = os.path.basename(file_name) if file_name else "None"
                 name_basename = os.path.basename(name) if name else "None"
                 print(file_basename, name_basename)
+            
+                
+                if os.path.basename(file_name) == os.path.basename(name):
+                    # Nếu là file chứa nearest_point, chỉ lấy các waypoint phía sau nó
+                    try:
+                        print("hihi")
+                        # Tìm nearest_point trong file waypoint với sai số nhỏ
+                        index = next(i for i, wp in enumerate(waypoints) if compare_coordinates(wp, nearest_point))
+                        print(f"index: {index}")
+                        waypoints = waypoints[index:]  # Lấy từ nearest_point trở đi
+                        print(f"processed len: {len(waypoints)}")
+                    except StopIteration:
+                        print(f"⚠️ Nearest point {nearest_point} not found in {file_name}")
             except Exception as e:
                 print(f"⚠️ Error printing basenames: {e}")
-                
-            if os.path.basename(file_name) == os.path.basename(name):
-                # Nếu là file chứa nearest_point, chỉ lấy các waypoint phía sau nó
-                try:
-                    print("hihi")
-                    # Tìm nearest_point trong file waypoint với sai số nhỏ
-                    index = next(i for i, wp in enumerate(waypoints) if compare_coordinates(wp, nearest_point))
-                    print(f"index: {index}")
-                    waypoints = waypoints[index:]  # Lấy từ nearest_point trở đi
-                    print(f"processed len: {len(waypoints)}")
-                except StopIteration:
-                    print(f"⚠️ Nearest point {nearest_point} not found in {file_name}")
+
             # Lưu vào danh sách tổng hợp
             all_waypoints.extend(waypoints)
         else:
