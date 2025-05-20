@@ -292,6 +292,10 @@ def main():
             ob = np.array(obs)
             s0, c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
             optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
+            c_d_d = optimal_path.d_d[1]
+            c_d_dd = optimal_path.d_dd[1]
+            c_speed = car_speed    
+
 
             count_none += 1
             if count_none == 3:
