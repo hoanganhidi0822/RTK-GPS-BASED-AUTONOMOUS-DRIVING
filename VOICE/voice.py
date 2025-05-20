@@ -13,7 +13,7 @@ def area_audio_thread_func(lat, lon):
         {"name": "Khu C",            "center": (10.853212809462221, 106.77152053728717), "radius": 50,  "audio_file": "VOICE/audio/KhoaDien.wav"    },
         {"name": "Khu D",            "center": (10.852303121191104, 106.77141033390284), "radius": 50,  "audio_file": "VOICE/audio/KhoaDien.wav"    },
         {"name": "Khu F",            "center": (10.851896027202086, 106.77277995969585), "radius": 30,  "audio_file": "VOICE/audio/F1.wav"          },
-        {"name": "Tòa Trung Tâm",    "center": (10.851310311327158, 106.77198007567596), "radius": 100, "audio_file": "VOICE/audio/toaTrungTam.wav" },
+        {"name": "Tòa Trung Tâm",    "center": (10.851310311327158, 106.77198007567596), "radius": 50, "audio_file": "VOICE/audio/toaTrungTam.wav" },
         {"name": "Maker Space",      "center": (10.851603865021001, 106.77336561933349), "radius": 20,  "audio_file": "VOICE/audio/MakerSpace.wav"  },
         {"name": "Toa Viet Duc",     "center": (10.851371749677574, 106.77271857948108), "radius": 20,  "audio_file": "VOICE/audio/MakerSpace.wav"  },
         {"name": "Co Khi Dong Luc",  "center": (10.852306705230843, 106.77283952111178), "radius": 20,  "audio_file": "VOICE/audio/cokhidongluc.wav"},

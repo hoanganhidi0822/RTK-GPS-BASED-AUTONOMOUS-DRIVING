@@ -11,38 +11,39 @@ from pydub import AudioSegment
 import simpleaudio as sa
 import speech_recognition as sr
 from google import genai
+from openai import OpenAI
+from pydub.playback import play
+client = OpenAI(api_key="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")  # thay YOUR_API_KEY bằng key của bạn
 
 cf.cf_destination = "none"
-client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
+# client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
 # WARM-UP Gemini
 try:
     warmup_prompt = "Bạn có thể giới thiệu bản thân không?"
-    _ = client.models.generate_content(
-        model='gemini-2.0-flash',
-        contents=[warmup_prompt]
+    _ = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": warmup_prompt}]
     )
-    print("✅ Gemini đã được warm-up.")
+    print("✅ GPT-4 đã được warm-up.")
 except Exception as e:
-    print("⚠️ Warm-up Gemini thất bại:", e)
+    print("⚠️ Warm-up GPT-4 thất bại:", e)
+
+import gc  # Thêm thư viện thu gom rác
+
 class virtual_assistance:
     def __init__(self):
-        print("Bắt đầu trợ lý ảo.")
-        # self.client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
-        self.count_call = 0
         self.recognizer = sr.Recognizer()
-        
+        print("Bắt đầu trợ lý ảo.")
 
     def get_record(self):
-        
         CHANNELS = 1
         RATE = 16000
         DURATION_LIMIT = 4
         CHUNK = 1024
-        OUTPUT_FILENAME = "recorded_audio_1.wav"
         SILENCE_THRESHOLD = 2000
         SILENCE_DURATION = 1.1
 
-        print("Đang ghi âm...")
+        print("🎙️ Đang ghi âm...")
 
         frames = []
         silence_start = None
@@ -72,23 +73,35 @@ class virtual_assistance:
         with stream:
             sd.sleep(int(DURATION_LIMIT * 1000))
 
-        print("🟢 Ghi âm hoàn tất!")
+        print("✅ Ghi âm xong, đang nhận diện...")
 
+        # Gộp các khung và chuyển thành AudioData
         audio_np = np.concatenate(frames)
-        reduced_noise = nr.reduce_noise(y=audio_np, sr=RATE, stationary=True, prop_decrease=1.0, time_mask_smooth_ms=50)
+        audio_raw = (audio_np * 32767).astype(np.int16).tobytes()
+        audio_data = sr.AudioData(audio_raw, sample_rate=RATE, sample_width=2)
 
-        wf = wave.open(OUTPUT_FILENAME, "wb")
-        wf.setnchannels(CHANNELS)
-        wf.setsampwidth(2)
-        wf.setframerate(RATE)
-        wf.writeframes((reduced_noise * 32767).astype(np.int16).tobytes())
-        wf.close()
+        # Giải phóng RAM sau khi xử lý
+        del frames, audio_np
 
-        print(f"✅ File đã được lưu: {OUTPUT_FILENAME}")
+        try:
+            text = self.recognizer.recognize_google(audio_data, language="vi-VN")
+            print("🗣️ Bạn nói:", text)
+            return text
+        except sr.UnknownValueError:
+            print("❌ Không nhận dạng được giọng nói.")
+        except sr.RequestError as e:
+            print(f"🔌 Lỗi kết nối: {e}")
+        finally:
+            # Xoá audio_data và ép thu gom rác
+            del audio_data, audio_raw
+            gc.collect()  # Gọi bộ gom rác để dọn bộ nhớ
+
+        return None
+
 
     def classify_by_keywords(self,text):
         text_lower = text.lower()
-        if any(k in text_lower for k in ["khu c", "khuê xi", "kêu xi", "xê"]):
+        if any(k in text_lower for k in ["khu c", "khuê xi", "kêu xi", "xê", "xi"]):
             return "khu_c"
         if any(k in text_lower for k in ["khu d", "khu dê", "đê"]):
             return "khu_d"
@@ -100,20 +113,24 @@ class virtual_assistance:
             return "go"
         return None
 
-    def understanding_record(self):
-        
-        with sr.AudioFile("recorded_audio_1.wav") as source:
-            audio = self.recognizer.record(source)
-            try:
-                user_text = self.recognizer.recognize_google(audio, language='vi-VN')
-                print("📝 Văn bản nhận được:", user_text)
-            except sr.UnknownValueError:
-                return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
-            except sr.RequestError as e:
-                print("Lỗi nhận dạng:", e)
-                return "Xin lỗi, tôi không thể nhận dạng giọng nói lúc này."
+    def understanding_record(self,user_text): 
+        # with sr.AudioFile("recorded_audio_1.wav") as source:
+        #     audio = self.recognizer.record(source)
+        #     try:
+        #         user_text = self.recognizer.recognize_google(audio, language='vi-VN')
+        #         print("📝 Văn bản nhận được:", user_text)
+        #     except sr.UnknownValueError:
+        #         return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
+        #     except sr.RequestError as e:
+        #         print("Lỗi nhận dạng:", e)
+        #         return "Xin lỗi, tôi không thể nhận dạng giọng nói lúc này."
 
-       
+        
+        if not user_text:
+            print("❌ Không nhận diện được văn bản.")
+            return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
+
+        print("📝 Văn bản nhận được:", user_text)
 
         prompt = """
                 # Vai trò, bản thân và Bối cảnh
@@ -145,16 +162,18 @@ class virtual_assistance:
                 * **Chuyển tiếp mượt mà:** Khi người dùng đặt câu hỏi không liên quan đến di chuyển, hãy lịch sự chuyển hướng về nhiệm vụ chính của bạn nhưng vẫn đảm bảo có sự kết nối và chuyển tiếp tự nhiên với câu hỏi của họ.
                     * *Ví dụ phản hồi:* "Tôi chỉ là một chiếc xe tự hành thông minh, tôi không thể biết thời tiết hôm nay thế nào. Nhưng tôi rất sẵn lòng đưa bạn đi trong khuôn viên trường. Bạn muốn đến địa điểm nào ạ?" hoặc "Đó là một câu hỏi thú vị! Tuy nhiên, nhiệm vụ chính của tôi là di chuyển một cách an toàn, với khả năng tự động điều chỉnh để tránh mọi vật cản. Bạn có muốn tôi đưa bạn đến một địa điểm nào đó trong trường không?"
             """
-        dest = self.classify_by_keywords(user_text)
-        if dest:
-            return dest
-        else:
-            # Chỉ gọi Gemini nếu không phân loại được bằng từ khóa
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=[prompt, user_text]
-            )
-            return response.text
+        # dest = self.classify_by_keywords(user_text)
+        # if dest:
+        #     return dest
+        # else:
+        response = client.chat.completions.create(
+        model="gpt-4.1-nano",
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": user_text}
+            ]
+        )
+        return response.choices[0].message.content.strip()
         # response = client.models.generate_content(
         #     model='gemini-2.0-flash',
         #     contents=[prompt, user_text]
@@ -174,44 +193,43 @@ class virtual_assistance:
             'go':        "tôi sẽ đưa bạn đến xưởng gỗ nhé."
         }
 
-        if text.strip().lower() in destination:
-            text_respond = destination[text.strip().lower()]
-            cf.cf_destination = text.strip().lower()
+        key = text.strip().lower()
+
+        if key in destination:
+            text_respond = destination[key]
+            cf.cf_destination = key
             is_run = True
+
+            # Đường dẫn file đã tạo sẵn
+            audio_path = os.path.join("Assistance_Astar/voice", f"{key}.mp3")
+
+            if os.path.exists(audio_path):
+                print(f"🔊 Đang phát file đã có: {audio_path}")
+            else:
+                print(f"⚠️ File âm thanh chưa tồn tại: {audio_path}")
+                return False  # hoặc gọi tạo file ở đây nếu muốn
+
         else:
             text_respond = text
+            audio_path = "output.mp3"  # file tạm
+            print("🎤 Dùng edge-tts để tạo âm thanh mới")
 
-        print("Phản hồi:", text_respond)
+            async def speak_async(text):
+                communicate = edge_tts.Communicate(text, voice="vi-VN-HoaiMyNeural")
+                await communicate.save(audio_path)
 
-        # ====== Dùng edge-tts để chuyển văn bản thành âm thanh ======
-        async def speak(text):
-            communicate = edge_tts.Communicate(text, voice="vi-VN-HoaiMyNeural")
-            await communicate.save("output.mp3")
+            asyncio.run(speak_async(text_respond))
 
-        asyncio.run(speak(text_respond))
-
-        # ====== Chuyển MP3 sang WAV để play bằng simpleaudio ======
-        sound = AudioSegment.from_mp3("output.mp3")
-        sound.export("output.wav", format="wav")
-
-        # ====== Phát âm thanh ======
-        try:
-            voice_obj = sa.WaveObject.from_wave_file("output.wav")
-            play_voice = voice_obj.play()
-            play_voice.wait_done()
-        except Exception as e:
-            print("Lỗi khi phát âm thanh:", e)
-        finally:
-            if os.path.exists("output.mp3"):
-                os.remove("output.mp3")
-            if os.path.exists("output.wav"):
-                os.remove("output.wav")
+        # Phát file mp3
+        sound = AudioSegment.from_mp3(audio_path)
+        sound = sound.apply_gain(6) 
+        play(sound)
 
         return is_run
 
     def run(self):
-        self.get_record()
-        text = self.understanding_record()
+        user_text = self.get_record()  # Gọi trực tiếp hàm ghi âm và nhận dạngself.get_record()
+        text = self.understanding_record(user_text)
         is_run = self.get_speech(text)
         return is_run
 

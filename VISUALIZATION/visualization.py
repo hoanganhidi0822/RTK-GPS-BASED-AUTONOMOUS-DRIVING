@@ -393,9 +393,9 @@ class VehicleStatusFrame(QFrame):
             """)
         else:
             self.vehicle_status_label.setStyleSheet("""
-                font-size: 70px;
+                font-size: 20px;
                 font-weight: bold;
-                color: lightgreen;
+                color: red;
             """)
 
         self.vehicle_status_label.setText(f"{status_text}")
@@ -608,9 +608,12 @@ class MapDisplayFrame(QFrame):
 
         self.init_face_detection()
     def init_face_detection(self):
+        mydict = ['Thay Giang', 'Thay Ha', 'Thay Hai', 'Thay Thanh', 'Hoang Anh', 'Quoc Kha']  # Ví dụ thêm tên
         self.face_detector = FaceRecognition(
-            face_detection_model='/home/hoang-anh/Downloads/faceTracking/model/face_detection_yunet_2023mar.onnx',
-            face_recognition_model='/home/hoang-anh/Downloads/faceTracking/model/face_recognition_sface_2021dec.onnx'
+            face_detection_model='/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/FACE_DETECTION/model1/face_detection_yunet_2023mar.onnx',
+            face_recognition_model='/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/FACE_DETECTION/model1/face_recognition_sface_2021dec.onnx',
+            svc_path='/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/FACE_DETECTION/model1/svc_model.pkl',
+            mydict=mydict
         )
 
         self.face_detect_frame_count = 0
@@ -656,7 +659,7 @@ class MapDisplayFrame(QFrame):
                 self.stacked_layout.setCurrentWidget(self.main_widget)
 
                 # Ưu tiên người quen
-                if "Hoang Anh" in names_detected:
+                if "Thay Giang" in names_detected:
                     self.play_audio("Hoang Anh")
                 elif "Quoc Kha" in names_detected:
                     self.play_audio("Quoc Kha")

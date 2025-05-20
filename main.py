@@ -17,9 +17,9 @@ import simpleaudio as sa
 
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
-# gps_ser = 1
+# gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+# stm32 = #stm32(port="/dev/ttyUSB1", baudrate=115200)
+gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
@@ -79,11 +79,11 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+    # lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    # lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Float", 15
-    # time.sleep(0.1)
+    lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Float", 15
+    time.sleep(0.1)
 
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -94,7 +94,6 @@ def update_state(ser):
 # ------ Depth_Obstacle_Position_Estimation ------- #
 def depth_thread():
     process_depth()
-
 
 def run_visualization():
     app = QApplication(sys.argv)
@@ -109,7 +108,6 @@ def slow_down_speed(distance, max_speed):
     :param max_speed: The maximum speed of the car
     :return: The speed of the car
     """
-    
     return int(max_speed * (1 / (1 + math.exp(5 - 1 * distance))))  # 5 và 1 là các hệ số điều chỉnh
 
 def main():
@@ -158,7 +156,7 @@ def main():
     rtk_bad_start = None
     rtk_resume_start = None
 
-    stm32(angle=int(0), speed=int(0), brake_state=0)
+    #stm32(angle=int(0), speed=int(0), brake_state=0)
 
     # Wait Assistance
     while cf.record:
@@ -245,12 +243,10 @@ def main():
 
         # Người vẫn còn sau 1.5 giây => dừng xe
         elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-            stm32(angle=int(-0), speed=int(0), brake_state=0)
+            #stm32(angle=int(-0), speed=int(0), brake_state=0)
             play_ = collision_sound.play()
             play_.wait_done()
-            # stm32(angle=int(-0), speed=0, brake_state=0)
             stop_triggered = True
-            # resume_timer = None
             print("\n[ALERT] Người xuất hiện liên tục trong 1.5s – Dừng xe!")
 
         # Nếu người đã rời đi và đủ thời gian (3 giây) thì cho xe chạy lại
@@ -259,7 +255,6 @@ def main():
             resume_timer = None
             print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
                 
-
         # --------------------   Update obstacle state  ------------------- #
         new_obstacles =  cf.obstacles
         # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
@@ -273,12 +268,11 @@ def main():
             obs.append(transform_obstacle_to_global(x, y, yaw, obstacle[1], obstacle[0]))
 
         ob = np.array(obs)
-        # for obs in ob:
-        #     print(obs)
-
+ 
         # ------------------------- Generate optimal path ------------------------- #
         optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
+        # print(f"------------------ obstacles: {obstacle[1]}, {obstacle[0]} ------------------- person: {person[1]}, {person[0]}")
         # ------------------------- Optimal Path None => Replan
         while optimal_path is None:          
             print("optimal_path is None !!!")
@@ -296,29 +290,25 @@ def main():
                 obs.append(transform_obstacle_to_global(x, y, yaw, obstacle[1], obstacle[0]))
 
             ob = np.array(obs)
-
             s0, c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
-
             optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
             count_none += 1
             if count_none == 3:
                 pass
-                # stm32(angle= int(-5), speed=0, brake_state=0)
+                # #stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                stm32(angle=0, speed=0, brake_state=1)
+                #stm32(angle=0, speed=0, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obs = [] 
                 count_none = 0
         # ---------------------- Pure Pursuit Control ------------------------ #
         if x is not None:
             # Pure Pursuit control: use the optimal path from Frenet
-            car_steer,  lookahead_point = pure_pursuit_control_frenet(float(lat), float(lon),
-                                                                        optimal_path, x, y,yaw, lookahead_distance, L)
+            car_steer,  lookahead_point = pure_pursuit_control_frenet(float(lat), float(lon), optimal_path, x, y,yaw, lookahead_distance, L)
             
             s0 , c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
-            
             c_d_d = optimal_path.d_d[1]
             c_d_dd = optimal_path.d_dd[1]
             c_speed = car_speed    
@@ -418,7 +408,7 @@ def main():
                     rtk_bad_start = current_time
                     rtk_resume_start = None
                     print("[WARNING] RTK mất Fixed – Dừng xe ngay!")
-                gps_speed = "SAFE MODE ON"
+                gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                 should_stop = True
 
             else:  # cf.rtk_status == "RTK Fixed"
@@ -435,24 +425,26 @@ def main():
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
-                    gps_speed = "SAFE MODE ON"
+                    gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                     should_stop = True
 
             if should_stop:
                 pass
-                stm32(angle=int(-0), speed=int(0), brake_state=0)
+                #stm32(angle=int(-0), speed=int(0), brake_state=0)
             else:
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
+                    #stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
                     count = 0
+
+            
             ############################################################################################################################ 
             persons = [] 
         # Check if the goal is reached
         if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
             gps_speed = "Goal reached!"
-            # stm32(angle=0, speed=0, brake_state=1) 
+            # #stm32(angle=0, speed=0, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play()
             play__.wait_done()
@@ -461,31 +453,33 @@ def main():
         obstacles = []   
         persons = [] 
 
-        # FPS
+        ############## FPS ###############
         alpha = 0.8
         delta_t = time.time() - time_start
         if delta_t > 0:
             fps = (1 - alpha) * fps + alpha * (1 / delta_t)
         time_start = time.time()
-        
+
+        ############# DEBUG #######################
         print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {target_speed}, Steering angle: {steering_angle:.2f}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
+
+        ############--- VISUALIZATION ---##########
         # right before your update_vis() call:
         if isinstance(gps_speed, (int, float)):
             vis_speed = gps_speed * 1.5
         else:
-            # assume it's a string like "Goal reached!"
             vis_speed = gps_speed
 
         # now call update_vis with the right argument:
         update_vis(x, y, yaw,
-                car_steer, paths, optimal_path,
-                tx, ty, tyaw, ob,
-                vis_speed)
+                    car_steer, paths, optimal_path,
+                    tx, ty, tyaw, ob,
+                    vis_speed)
+        
         obs = []
     
 if __name__ == '__main__':
-         
     vis_process = threading.Thread(target=run_visualization)
     vis_process.daemon = True
     vis_process.start()
