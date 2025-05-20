@@ -187,7 +187,7 @@ def process_depth():
         obstacles = []
         persons = []
 
-                # Tính FPS trung bình mượt
+        # Tính FPS trung bình mượt
         # Trong vòng lặp while:
         delta_t = time.time() - time_start
         instantaneous_fps = 1.0 / delta_t if delta_t > 0 else 0.0

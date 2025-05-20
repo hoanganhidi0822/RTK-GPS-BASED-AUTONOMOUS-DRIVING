@@ -17,8 +17,8 @@ import simpleaudio as sa
 
 
 # --------------- UART ------------------------- #
-# gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-# stm32 = #stm32(port="/dev/ttyUSB1", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+stm32 = stm32(port="/dev/ttyUSB1", baudrate=115200)
 gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -156,7 +156,7 @@ def main():
     rtk_bad_start = None
     rtk_resume_start = None
 
-    #stm32(angle=int(0), speed=int(0), brake_state=0)
+    stm32(angle=int(0), speed=int(0), brake_state=0)
 
     # Wait Assistance
     while cf.record:
@@ -243,7 +243,7 @@ def main():
 
         # Người vẫn còn sau 1.5 giây => dừng xe
         elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-            #stm32(angle=int(-0), speed=int(0), brake_state=0)
+            stm32(angle=int(-0), speed=int(0), brake_state=0)
             play_ = collision_sound.play()
             play_.wait_done()
             stop_triggered = True
@@ -296,10 +296,10 @@ def main():
             count_none += 1
             if count_none == 3:
                 pass
-                # #stm32(angle= int(-5), speed=0, brake_state=0)
+                # stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                #stm32(angle=0, speed=0, brake_state=1)
+                stm32(angle=0, speed=0, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obs = [] 
                 count_none = 0
@@ -430,12 +430,12 @@ def main():
 
             if should_stop:
                 pass
-                #stm32(angle=int(-0), speed=int(0), brake_state=0)
+                stm32(angle=int(-0), speed=int(0), brake_state=0)
             else:
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    #stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
+                    stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
                     count = 0
 
             
@@ -444,7 +444,7 @@ def main():
         # Check if the goal is reached
         if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
             gps_speed = "Goal reached!"
-            # #stm32(angle=0, speed=0, brake_state=1) 
+            # stm32(angle=0, speed=0, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play()
             play__.wait_done()
