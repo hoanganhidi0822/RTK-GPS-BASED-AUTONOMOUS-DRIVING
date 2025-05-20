@@ -24,8 +24,8 @@ from FACE_DETECTION.face import FaceRecognition
 from Assistance_Astar.main_assistance import *
 # from frenet_optimal_trajectory import *
 import config as cf
-
-
+from pydub import AudioSegment
+from pydub.playback import play
 
 wave_obj = sa.WaveObject.from_wave_file("VISUALIZATION/sound/click.wav")
 micro_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/micro_sound.wav")
@@ -660,9 +660,13 @@ class MapDisplayFrame(QFrame):
 
                 # Ưu tiên người quen
                 if "Thay Giang" in names_detected:
-                    self.play_audio("Hoang Anh")
-                elif "Quoc Kha" in names_detected:
-                    self.play_audio("Quoc Kha")
+                    self.play_audio("Thay Giang")
+                elif "Thay Hai" in names_detected:
+                    self.play_audio("Thay Hai")
+                elif "Thay Thanh" in names_detected:
+                    self.play_audio("Thay Thanh")
+                elif "Thay Ha" in names_detected:
+                    self.play_audio("Thay Ha")
                 else:
                     self.play_audio("default")  # âm thanh chào chung
 
@@ -679,45 +683,25 @@ class MapDisplayFrame(QFrame):
         if self.cap.isOpened():
             self.cap.release()
 
-        def play():
-            if name == "Hoang Anh":
-                file_path = "VISUALIZATION/sound/forward_collision_warning.wav"
-            elif name == "Quoc Kha":
-                file_path = "/mnt/.../micro_sound.wav"
+        def play_():
+            if name == "Thay Giang":
+                file_path = "VISUALIZATION/voice/hieugiang.mp3"
+            elif name == "Thay Hai":
+                file_path = "VISUALIZATION/voice/thanhhai.mp3"
+            elif name == "Thay Thanh":
+                file_path = "VISUALIZATION/voice/dinhthanh.mp3"
+            elif name == "Thay Ha":
+                file_path = "VISUALIZATION/voice/myha.mp3"
             else:
-                file_path = "VISUALIZATION/sound/output.wav"  # Âm thanh chung
+                file_path = "/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/output.mp3"  # Âm thanh chung
 
-            wave_obj = sa.WaveObject.from_wave_file(file_path)
-            wave_obj.play()
+            sound = AudioSegment.from_mp3(file_path)
+            sound = sound.apply_gain(6) 
+            play(sound)
 
-        play()
-
-    # def play_audio(self, file_path):
-    #     url = QUrl.fromLocalFile(file_path)
-    #     content = QMediaContent(url)
-    #     self.player.setMedia(content)
-    #     self.player.setVolume(100)
-    #     self.player.play()
+        play_()
 
     def show_camera_view(self):
-        # # Hiển thị ảnh từ cf.image
-        # if hasattr(cf, "image") and cf.image is not None:
-        #     img = cf.image
-
-        #     # Chuyển về uint8 nếu ảnh không đúng kiểu
-        #     if img.dtype != np.uint8:
-        #         img = np.clip(img, 0, 255)  # đảm bảo giá trị nằm trong [0, 255]
-        #         img = img.astype(np.uint8)
-
-        #     img = cv2.resize(img, (1080, 720))
-        #     rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        #     h, w, ch = rgb_img.shape
-        #     bytes_per_line = ch * w
-        #     qimg = QImage(rgb_img.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        #     self.camera_label.setPixmap(QPixmap.fromImage(qimg))
-        # else:
-        #     self.camera_label.setText("Không có ảnh từ camera.")
 
         self.stacked_layout.setCurrentWidget(self.camera_widget)
 
