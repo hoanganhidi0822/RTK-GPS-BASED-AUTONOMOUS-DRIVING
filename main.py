@@ -191,15 +191,20 @@ def main():
     tx, ty, tyaw, tc, csp = generate_target_course(wx, wy)
 
     count_none = 0
-    target_speed = 8
-
-    speed_filtered = 9
+    target_speed = 9
+    speed_filtered = 5
     alpha_speed = 0.9
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.85   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.88   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     prev_gps_time = 0
     max_delta_speed =0
+
+   
+    prev_gps_speed = 0
+    send_zero_speed = False
+    zero_speed_sent = False
+
     # --- Main Loop --- #
     while True:
         
@@ -271,7 +276,8 @@ def main():
                 obstacles = []
                 obs = [] 
                 count_none = 0
-        # ---------------------- Pure Pursuit Control ------------------------ #
+
+        ######################################################################################################################################
         if x is not None:
             # Pure Pursuit control: use the optimal path from Frenet
             car_steer,  lookahead_point = pure_pursuit_control_frenet(float(lat), float(lon), optimal_path, x, y,yaw, lookahead_distance, L)
@@ -301,11 +307,11 @@ def main():
                 print("[WARNING] Curvature calc failed:", e)
 
 
-            danger_zone = 1.5  # mét
+            danger_zone = 1.6  # mét
 
             found_person = False
             for person in persons:
-                if abs(person[0]) < danger_zone and abs(person[1]) < 5.0:
+                if abs(person[0]) < danger_zone and abs(person[1]) < 8.0:
                     found_person = True
                     break
 
@@ -333,66 +339,60 @@ def main():
             if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 3.0:
                 stop_triggered = False
                 resume_timer = None
-                speed_filtered = 9
                 print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
 
-            # --------- KHỞI TẠO BIẾN TOÀN CỤC --------- #
-            if 'prev_gps_speed' not in globals():
-                prev_gps_speed = gps_speed
-                send_zero_speed = False
-                zero_speed_sent = False
+            delta_speed = gps_speed - prev_gps_speed
+            prev_gps_speed = gps_speed
 
-            ############################################################################################
-            prev_gps_time = time.time()  # Khởi tạo thời điểm ban đầu
 
-            delta_time = current_time - prev_gps_time  # Tính delta_time
-            delta_speed = (gps_speed - prev_gps_speed) / delta_time  # Gia tốc thực (m/s²)
-            print(f"[LOG] Delta Speed: {delta_speed}")
+            # ############################################################################################
+            # prev_gps_time = time.time()  # Khởi tạo thời điểm ban đầu
 
-            prev_gps_speed = gps_speed  # Lưu tốc độ hiện tại cho lần sau
-            prev_gps_time = current_time  # Cập nhật thời gian
+            # delta_time = current_time - prev_gps_time  # Tính delta_time
+            # delta_speed = (gps_speed - prev_gps_speed) / delta_time  # Gia tốc thực (m/s²)
+            # print(f"[LOG] Delta Speed: {delta_speed}")
 
-            # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
-            if gps_speed < 4.0 and (target_speed > 8): #and delta_speed < 1
-                send_zero_speed = True
-                zero_speed_sent = False
-                reset_start_time = time.time()  # Ghi lại thời điểm reset
+            # prev_gps_speed = gps_speed  # Lưu tốc độ hiện tại cho lần sau
+            # prev_gps_time = current_time  # Cập nhật thời gian
+
+            # # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
+            # if gps_speed < 4.0 and (target_speed > 8): #and delta_speed < 1
+            #     send_zero_speed = True
+            #     zero_speed_sent = False
+            #     reset_start_time = time.time()  # Ghi lại thời điểm reset
             
-            # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
-            if send_zero_speed:
-                if not zero_speed_sent:
-                    # Gửi lệnh tốc độ 0 ngay lập tức
-                    target_speed = 0
-                    speed_filtered = 0
-                    zero_speed_sent = True
-                    stm32(angle=int(steering_filtered), speed=int(0), brake_state=0)
+            # # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
+            # if send_zero_speed:
+            #     if not zero_speed_sent:
+            #         # Gửi lệnh tốc độ 0 ngay lập tức
+            #         target_speed = 0
+            #         speed_filtered = 0
+            #         zero_speed_sent = True
+            #         stm32(angle=int(steering_filtered), speed=int(0), brake_state=0)
 
-                # Kiểm tra thời gian reset
-                if (time.time() - reset_start_time) >= 0.5:
-                    send_zero_speed = False
-                    zero_speed_sent = False
-                    reset_start_time = None
-                    speed_filtered = 9  # Khôi phục tốc độ sau reset
+            #     # Kiểm tra thời gian reset
+            #     if (time.time() - reset_start_time) >= 0.5:
+            #         send_zero_speed = False
+            #         zero_speed_sent = False
+            #         reset_start_time = None
+            #         speed_filtered = 9  # Khôi phục tốc độ sau reset
 
 
-            # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
-            if send_zero_speed and zero_speed_sent:
-                speed_filtered =  9
-                send_zero_speed = False  # Reset lại cờ
+            # # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
+            # if send_zero_speed and zero_speed_sent:
+            #     speed_filtered =  9
+            #     send_zero_speed = False  # Reset lại cờ
+
 
             # ----- TANG TOC DOT NGOT ------####################################################
-            if gps_speed < 1.5 and delta_speed > 0.5:
+            if gps_speed < 3 and delta_speed > 1:
                 speed_filtered = 3
 
-
-            ######################################################################################
-            
-                
             #######################################################################################
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
             if gps_speed > 8:
                 target_speed = 1  # Giảm tốc
-            elif gps_speed <= 7:
+            elif gps_speed <= 7.5:
                 target_speed = 10  # Tăng tốc
             else:
                 target_speed = 9  # Duy trì tốc độ ổn định
@@ -413,14 +413,6 @@ def main():
             # Reset sau khi xử lý
             obstacles = []
             persons = []
-
-            # Low-pass filter: target speed
-            speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
-
-            # ----------- CONTROL BLOCK ------------- ####################################################
-            # Giả sử steering_angle được tính từ hệ thống điều khiển:
-            steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
-            steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
 
             #################### --- STOP --- ###################################
             should_stop = False
@@ -457,16 +449,24 @@ def main():
                         rtk_bad = False
                         rtk_bad_start = None
                         rtk_resume_start = None
-                        speed_filtered = 3  
-
-                        # stm32(angle=int(-0), speed=int(9), brake_state=0)
+                        
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
                     gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                     should_stop = True
 
+
+
             ########## --- CONTROL COMMAND  ---- #############
+
+            # Low-pass filter: steering
+            steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
+            steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
+
+            # Low-pass filter: target speed
+            speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
+
             if should_stop:
                 pass
                 stm32(angle=int(-0), speed=int(0), brake_state=0)
@@ -474,7 +474,7 @@ def main():
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    stm32(angle=round(steering_filtered * 1.00), speed=round(speed_filtered), brake_state=0)
+                    stm32(angle=round(steering_filtered * 1.0), speed=round(speed_filtered), brake_state=0)
                     count = 0
 
             ############################################################################################################################ 
@@ -499,7 +499,7 @@ def main():
         time_start = time.time()
 
         ############# DEBUG #########################################################
-        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {round(gps_speed,1)},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
+        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
         ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:
