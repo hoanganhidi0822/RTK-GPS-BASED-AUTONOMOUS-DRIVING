@@ -88,7 +88,7 @@ def update_state(ser):
     x, y = lat_lon_to_xy(float(lat), float(lon))
     yaw_c = np.deg2rad(convert_yaw(float(car_heading), yaw_offset=90))
     
-    return lat, lon, rtk_status, int(speed), x, y, yaw_c 
+    return lat, lon, rtk_status, speed, x, y, yaw_c 
 
 # ------ Depth_Obstacle_Position_Estimation ------- #
 def depth_thread():
@@ -198,7 +198,8 @@ def main():
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
     alpha_steering = 0.85   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
-
+    prev_gps_time = 0
+    max_delta_speed =0
     # --- Main Loop --- #
     while True:
         
@@ -341,14 +342,43 @@ def main():
                 send_zero_speed = False
                 zero_speed_sent = False
 
-            # --------- TÍNH ĐẠO HÀM TỐC ĐỘ GPS --------- #
-            delta_speed = gps_speed - prev_gps_speed
-            prev_gps_speed = gps_speed
+            ############################################################################################
+            prev_gps_time = time.time()  # Khởi tạo thời điểm ban đầu
+
+            delta_time = current_time - prev_gps_time  # Tính delta_time
+            delta_speed = (gps_speed - prev_gps_speed) / delta_time  # Gia tốc thực (m/s²)
+            print(f"[LOG] Delta Speed: {delta_speed}")
+
+            prev_gps_speed = gps_speed  # Lưu tốc độ hiện tại cho lần sau
+            prev_gps_time = current_time  # Cập nhật thời gian
 
             # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
-            if gps_speed < 1.0 and delta_speed < -0.5:
+            if gps_speed < 4.0 and (target_speed > 8): #and delta_speed < 1
                 send_zero_speed = True
                 zero_speed_sent = False
+                reset_start_time = time.time()  # Ghi lại thời điểm reset
+            
+            # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
+            if send_zero_speed:
+                if not zero_speed_sent:
+                    # Gửi lệnh tốc độ 0 ngay lập tức
+                    target_speed = 0
+                    speed_filtered = 0
+                    zero_speed_sent = True
+                    stm32(angle=int(steering_filtered), speed=int(0), brake_state=0)
+
+                # Kiểm tra thời gian reset
+                if (time.time() - reset_start_time) >= 0.5:
+                    send_zero_speed = False
+                    zero_speed_sent = False
+                    reset_start_time = None
+                    speed_filtered = 9  # Khôi phục tốc độ sau reset
+
+
+            # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
+            if send_zero_speed and zero_speed_sent:
+                speed_filtered =  9
+                send_zero_speed = False  # Reset lại cờ
 
             # ----- TANG TOC DOT NGOT ------####################################################
             if gps_speed < 1.5 and delta_speed > 0.5:
@@ -356,15 +386,7 @@ def main():
 
 
             ######################################################################################
-            # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
-            if send_zero_speed and not zero_speed_sent:
-                target_speed = 0
-                zero_speed_sent = True
-                return target_speed  # Gửi 0 rồi kết thúc sớm
-
-            # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
-            if send_zero_speed and zero_speed_sent:
-                send_zero_speed = False  # Reset lại cờ
+            
                 
             #######################################################################################
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
@@ -477,12 +499,12 @@ def main():
         time_start = time.time()
 
         ############# DEBUG #########################################################
-        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
+        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {round(gps_speed,1)},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
         ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:
         if isinstance(gps_speed, (int, float)):
-            vis_speed = gps_speed * 1.5
+            vis_speed = round(gps_speed * 1.5,1)
         else:
             vis_speed = gps_speed
 
