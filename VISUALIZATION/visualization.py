@@ -693,7 +693,7 @@ class MapDisplayFrame(QFrame):
             elif name == "Thay Ha":
                 file_path = "VISUALIZATION/voice/myha.mp3"
             else:
-                file_path = "/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/output.mp3"  # Âm thanh chung
+                file_path = "/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/test/output.mp3"  # Âm thanh chung
 
             sound = AudioSegment.from_mp3(file_path)
             sound = sound.apply_gain(6) 

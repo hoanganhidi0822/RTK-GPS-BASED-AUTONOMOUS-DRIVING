@@ -15,11 +15,10 @@ from VISUALIZATION.visualization import *
 from VOICE.voice import *
 import simpleaudio as sa
 
-
 # --------------- UART ------------------------- #
 gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
 stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
-gps_ser = 1
+# gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
@@ -79,11 +78,11 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    # lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Float", 15
-    time.sleep(0.1)
+    # lat, lon, car_heading, rtk_status, speed = 10.8507759083,106.7715805667, 270, "Float", 15
+    # time.sleep(0.1)
 
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -194,13 +193,12 @@ def main():
     count_none = 0
     target_speed = 8
 
-    speed_filtered = 0
-    alpha_speed = 0.98
+    speed_filtered = 9
+    alpha_speed = 0.9
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.82   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.88   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
 
-    
     # --- Main Loop --- #
     while True:
         
@@ -220,41 +218,6 @@ def main():
             persons = new_persons
             new_persons = []
 
-        
-        danger_zone = 1.5  # mét
-
-        found_person = False
-        for person in persons:
-            if abs(person[0]) < danger_zone and abs(person[1]) < 5.0:
-                found_person = True
-                break
-
-        current_time = time.time()
-
-        # Phát hiện người lần đầu
-        if found_person and person_detected_time is None:
-            person_detected_time = current_time
-
-        # Không còn người trong vùng nguy hiểm
-        elif not found_person:
-            person_detected_time = None
-            if stop_triggered and resume_timer is None:
-                resume_timer = current_time  # Bắt đầu đếm để chạy lại
-
-        # Người vẫn còn sau 1.5 giây => dừng xe
-        elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-            stm32(angle=int(-0), speed=int(0), brake_state=0)
-            play_ = collision_sound.play()
-            play_.wait_done()
-            stop_triggered = True
-            print("\n[ALERT] Người xuất hiện liên tục trong 1.5s – Dừng xe!")
-
-        # Nếu người đã rời đi và đủ thời gian (3 giây) thì cho xe chạy lại
-        if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 3.0:
-            stop_triggered = False
-            resume_timer = None
-            print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
-                
         # --------------------   Update obstacle state  ------------------- #
         new_obstacles =  cf.obstacles
         # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
@@ -292,10 +255,9 @@ def main():
             ob = np.array(obs)
             s0, c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
             optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
-            c_d_d = optimal_path.d_d[1]
-            c_d_dd = optimal_path.d_dd[1]
-            c_speed = car_speed    
-
+            # c_d_d = optimal_path.d_d[1]
+            # c_d_dd = optimal_path.d_dd[1]
+            # c_speed = car_speed    
 
             count_none += 1
             if count_none == 3:
@@ -305,6 +267,7 @@ def main():
                 print("Replanning failed too many times — entering safe mode.")
                 stm32(angle=0, speed=0, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
+                obstacles = []
                 obs = [] 
                 count_none = 0
         # ---------------------- Pure Pursuit Control ------------------------ #
@@ -336,6 +299,42 @@ def main():
             except Exception as e:
                 print("[WARNING] Curvature calc failed:", e)
 
+
+            danger_zone = 1.5  # mét
+
+            found_person = False
+            for person in persons:
+                if abs(person[0]) < danger_zone and abs(person[1]) < 5.0:
+                    found_person = True
+                    break
+
+            current_time = time.time()
+
+            # Phát hiện người lần đầu
+            if found_person and person_detected_time is None:
+                person_detected_time = current_time
+
+            # Không còn người trong vùng nguy hiểm
+            elif not found_person:
+                person_detected_time = None
+                if stop_triggered and resume_timer is None:
+                    resume_timer = current_time  # Bắt đầu đếm để chạy lại
+
+            # Người vẫn còn sau 1.5 giây => dừng xe
+            elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
+                stm32(angle=int(-0), speed=int(0), brake_state=0)
+                play_ = collision_sound.play()
+                play_.wait_done()
+                stop_triggered = True
+                print("\n[ALERT] Người xuất hiện liên tục trong 1.5s – Dừng xe!")
+
+            # Nếu người đã rời đi và đủ thời gian (3 giây) thì cho xe chạy lại
+            if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 3.0:
+                stop_triggered = False
+                resume_timer = None
+                speed_filtered = 9
+                print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
+
             # --------- KHỞI TẠO BIẾN TOÀN CỤC --------- #
             if 'prev_gps_speed' not in globals():
                 prev_gps_speed = gps_speed
@@ -346,11 +345,17 @@ def main():
             delta_speed = gps_speed - prev_gps_speed
             prev_gps_speed = gps_speed
 
-            # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- #
-            if gps_speed < 1.0 and delta_speed < -1.0:
+            # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
+            if gps_speed < 1.0 and delta_speed < -0.5:
                 send_zero_speed = True
                 zero_speed_sent = False
 
+            ### ----- TANG TOC DOT NGOT ------####################################################
+            if gps_speed < 1.5 and delta_speed > 0.5:
+                speed_filtered = 3
+
+
+            ######################################################################################
             # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
             if send_zero_speed and not zero_speed_sent:
                 target_speed = 0
@@ -360,45 +365,32 @@ def main():
             # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
             if send_zero_speed and zero_speed_sent:
                 send_zero_speed = False  # Reset lại cờ
-
+                
+            #######################################################################################
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
             if gps_speed > 8:
                 target_speed = 1  # Giảm tốc
-            elif gps_speed < 6.5:
-                target_speed = 9  # Tăng tốc
+            elif gps_speed <= 7:
+                target_speed = 10  # Tăng tốc
             else:
-                target_speed = 8  # Duy trì tốc độ ổn định
+                target_speed = 9  # Duy trì tốc độ ổn định
 
             # Giới hạn trên
-            target_speed = min(target_speed, 9)
+            target_speed = min(target_speed, 10)
 
             # --------- GIẢM TỐC KHI GẦN ĐÍCH --------- #
             distance_to_goal = np.hypot(tx[-1] - x, ty[-1] - y)
 
-            if distance_to_goal < 5:
+            if distance_to_goal < 8:
                 target_speed = min(target_speed, slow_down_speed(distance_to_goal, 8))
 
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) > 0 or len(persons) > 0:
-                target_speed = min(target_speed, 7)
+                target_speed = min(target_speed, 8)
 
             # Reset sau khi xử lý
             obstacles = []
             persons = []
-
-
-            # Cờ trạng thái để phát hiện lần đầu target_speed nhảy lên
-            if 'auto_mode_started' not in globals():
-                auto_mode_started = False
-                speed_filtered = 0
-                steering_filtered = 0
-
-            # Nếu xe đang đứng yên, và target_speed bất ngờ lớn -> đoán là vừa vào AutoMode
-            if not auto_mode_started and gps_speed < 0.5 and target_speed >= 6 and speed_filtered < 2:
-                print("[INFO] Phát hiện chuyển sang AutoMode – Reset tốc độ mượt")
-                speed_filtered = 0  # hoặc gps_speed nếu cần
-                steering_filtered = 0
-                auto_mode_started = True    
 
             # Low-pass filter: target speed
             speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
@@ -408,6 +400,7 @@ def main():
             steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
 
+            #################### --- STOP --- ###################################
             should_stop = False
             # 1. Camera lỗi
             if cf.camera_error == 1:
@@ -420,7 +413,8 @@ def main():
                 should_stop = True
 
             # 3) RTK‑status hysteresis
-            if cf.rtk_status != "RTK Fixed":
+            if cf.rtk_status != "RTK Fixed" and cf.rtk_status != "RTK Float":
+
                 # just lost RTK
                 if not rtk_bad:
                     rtk_bad = True
@@ -441,15 +435,16 @@ def main():
                         rtk_bad = False
                         rtk_bad_start = None
                         rtk_resume_start = None
-                        speed_filtered = gps_speed
-                       
+                        speed_filtered = 3  
+
+                        # stm32(angle=int(-0), speed=int(9), brake_state=0)
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
                     gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                     should_stop = True
 
-
+            ########## --- CONTROL COMMAND  ---- #############
             if should_stop:
                 pass
                 stm32(angle=int(-0), speed=int(0), brake_state=0)
@@ -457,10 +452,9 @@ def main():
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    stm32(angle=int(steering_filtered * 1.00), speed=int(speed_filtered), brake_state=0)
+                    stm32(angle=round(steering_filtered * 1.00), speed=round(speed_filtered), brake_state=0)
                     count = 0
 
-            
             ############################################################################################################################ 
             persons = [] 
         # Check if the goal is reached
@@ -475,18 +469,17 @@ def main():
         obstacles = []   
         persons = [] 
 
-        ############## FPS ###############
+        ############## FPS ##########################################################
         alpha = 0.8
         delta_t = time.time() - time_start
         if delta_t > 0:
             fps = (1 - alpha) * fps + alpha * (1 / delta_t)
         time_start = time.time()
 
-        ############# DEBUG #######################
-        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {target_speed}, Steering angle: {steering_angle:.2f}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
+        ############# DEBUG #########################################################
+        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
-
-        ############--- VISUALIZATION ---##########
+        ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:
         if isinstance(gps_speed, (int, float)):
             vis_speed = gps_speed * 1.5

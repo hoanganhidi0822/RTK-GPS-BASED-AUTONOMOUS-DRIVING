@@ -46,8 +46,12 @@ def get_gps_data(ser):
             try:
                 gps_data_split = gps_data.split(',')
                 
-                if gps_data.startswith("$GPHDT"):
-                    heading = float(gps_data_split[1])
+                # if gps_data.startswith("$GPHDT"):
+                #     heading = float(gps_data_split[1])
+                
+                if gps_data.startswith("$GPYBM"):
+                    if len(gps_data_split) > 6 and gps_data_split[6]:
+                        heading = float(gps_data_split[6])
                 
                 elif gps_data.startswith("$GPGGA"):
                     if len(gps_data_split) > 9:
