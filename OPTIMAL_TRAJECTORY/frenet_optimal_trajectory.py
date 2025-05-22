@@ -9,8 +9,8 @@ MAX_CURVATURE = 10        # maximum curvature (độ cong) [1/m]
 MAX_ROAD_WIDTH = 6        # maximum road width [m]
 D_ROAD_W = 0.6           # road width sampling length [m]
 DT = 0.3                  # time tick [s]
-MAXT = 5.0                # max prediction time [m]
-MINT = 4.0                # min prediction time [m]
+MAXT = 6.0                # max prediction time [m]
+MINT = 5.5                # min prediction time [m]
 TARGET_SPEED = 18 / 3.6   # target speed [m/s]
 D_T_S = 0.1 / 3.6         # target speed sampling length [m/s]
 N_S_SAMPLE = 1            # sampling number of target speed
@@ -151,90 +151,6 @@ class Frenet_path:
         self.yaw = [] # Góc phương vị (yaw angle) tại mỗi điểm trong không gian Cartesian
         self.ds = []  # Khoảng cách giữa các điểm liên tiếp trên quỹ đạo trong không gian Cartesian
         self.c = []   # Độ cong (curvature) tại mỗi điểm trên quỹ đạo trong không gian Cartesian
-
-# def calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0):
-#     # c_speed: Tốc độ hiện tại của xe dọc theo quỹ đạo tham chiếu (longitudinal speed)
-#     # c_d    : Độ lệch ngang hiện tại (lateral offset)
-#     # c_d_d  : Vận tốc lệch ngang hiện tại (lateral velocity)
-#     # c_d_dd : Gia tốc lệch ngang hiện tại (lateral acceleration)
-#     # s0     : Vị trí dọc hiện tại trên quỹ đạo tham chiếu (accumulated longitudinal position)
-#     frenet_paths = []
-
-#     # generate path to each offset goal
-#     for di in np.arange(-MAX_ROAD_WIDTH/2, MAX_ROAD_WIDTH/2, D_ROAD_W):
-#         # For each lateral offset (di) from -MAX_ROAD_WIDTH/2 to MAX_ROAD_WIDTH/2 (step D_ROAD_W)
-#         # Lề trái đến lề phải, path chính nằm ở tim đường
-#         # di là các giá trị độ lệch ngang mục tiêu trong phạm vi chiều rộng của đường.
-        
-#         # Lập kế hoạch chuyển động ngang (Lateral motion planning)
-#         # For each time duration (Ti) from MINT to MAXT (step DT)
-#         for Ti in np.arange(MINT, MAXT, DT):
-#             # Ti là các giá trị thời gian (duration) để đạt được mục tiêu di.
-#             # Create a new Frenet path (fp)
-#             fp = Frenet_path()
-
-#             # Generate lateral trajectory using quintic polynomial
-#             #    S: start E:end  vitriS,vantocS,giatocS vitriE,vantocE,giatocE, time
-#             lat_qp = quintic_polynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti)
-            
-#             # Lưu kết quả vào fp
-#             # Thời gian t: fp.t
-#             # print(Ti)
-#             fp.t = [t for t in np.arange(0.0, Ti, DT)]
-            
-#             # Calculate lateral parameters (fp.d, fp.d_d, fp.d_dd, fp.d_ddd)
-#             # Độ lệch ngang d: fp.d
-#             fp.d = [lat_qp.calc_point(t) for t in fp.t]
-#             # print(len(fp.d))
-            
-#             # Vận tốc, gia tốc, và giật ngang: fp.d_d, fp.d_dd, fp.d_ddd
-#             fp.d_d = [lat_qp.calc_first_derivative(t) for t in fp.t]
-#             fp.d_dd = [lat_qp.calc_second_derivative(t) for t in fp.t]
-#             fp.d_ddd = [lat_qp.calc_third_derivative(t) for t in fp.t]
-#             # print(f"D: {fp.d}")
-#             ## Lập kế hoạch chuyển động dọc (Longitudinal motion planning)
-#             # Mục tiêu: Tính toán các quỹ đạo để duy trì hoặc thay đổi tốc độ dọc đến các giá trị mục tiêu khác nhau tv.
-            
-#             # Duyệt qua các giá trị tốc độ mục tiêu tv
-#             # Loongitudinal motion planning (Velocity keeping)
-#             # For each target velocity (tv) around TARGET_SPEED
-#             for tv in np.arange(TARGET_SPEED - D_T_S * N_S_SAMPLE, TARGET_SPEED + D_T_S * N_S_SAMPLE, D_T_S):
-#                 # print(D_T_S)
-#                 tfp = copy.deepcopy(fp) # Sao chép quỹ đạo ngang fp
-                
-#                 # Tính toán chuyển động dọc bằng phương trình bậc 4
-#                 # print(s0)
-#                 # Generate longitudinal trajectory using quartic polynomial
-#                 # Sử dụng quartic polynomial để mô hình hóa chuyển động từ trạng thái hiện tại (s0,cspeed,0) đến trạng thái mục tiêu (tv,0).
-#                 lon_qp = quartic_polynomial(s0, c_speed, 0.0, tv, 0.0, Ti) 
-
-#                 # Calculate longitudinal parameters (tfp.s, tfp.s_d, tfp.s_dd, tfp.s_ddd)
-#                 # Lưu kết quả vào tfp: Vị trí dọc, Vận tốc, gia tốc, và giật dọc:tfp.s, tfp.s_d, tfp.s_dd, tfp.s_ddd
-                
-                
-#                 # print(f"S: {tfp.s}")
-#                 tfp.s     = [ lon_qp.calc_point(t) for t in fp.t]
-#                 tfp.s_d   = [ lon_qp.calc_first_derivative(t) for t in fp.t]
-#                 tfp.s_dd  = [ lon_qp.calc_second_derivative(t) for t in fp.t]
-#                 tfp.s_ddd = [ lon_qp.calc_third_derivative(t) for t in fp.t]
-
-#                 # Compute costs (Jp, Js, ds) 
-#                 Jp = sum(np.power(tfp.d_ddd, 2))  # square of jerk
-#                 Js = sum(np.power(tfp.s_ddd, 2))  # square of jerk
-
-#                 # square of diff from target speed
-#                 # ds: Cost do chênh lệch tốc độ với tốc độ mục tiêu.
-#                 ds = (TARGET_SPEED - tfp.s_d[-1])**2
-
-#                 # Calculate total costs (tfp.cd, tfp.cv, tfp.cf)
-#                 tfp.cd = KJ * Jp + KT * Ti + KD * tfp.d[-1]**2 # Cost do độ lệch ngang cuối cùng.
-#                 tfp.cv = KJ * Js + KT * Ti + KD * ds 
-#                 tfp.cf = KLAT * tfp.cd + KLON * tfp.cv
-
-#                 # Append the trajectory (tfp) to the list
-#                 frenet_paths.append(tfp)
-    
-#     return frenet_paths
 
 
 def calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0):
@@ -409,44 +325,6 @@ def check_collision(fp, ob):
 
     return True  # Không có va chạm, quỹ đạo an toàn
 
-# def check_collision(fp, ob):
-#     """
-#     Kiểm tra va chạm dựa trên việc xét nhiều điểm trên xe.
-
-#     Parameters:
-#         fp: Đối tượng Frenet_path chứa danh sách tọa độ (x, y).
-#         ob: Mảng NumPy chứa danh sách tọa độ (x, y) của các chướng ngại vật.
-
-#     Returns:
-#         True nếu quỹ đạo an toàn, False nếu có va chạm.
-#     """
-#     path_length = len(fp.x)
-#     three_fourths_index = path_length // 4
-#     x_far = fp.x[three_fourths_index:]
-#     y_far = fp.y[three_fourths_index:]
-
-#     CAR_WIDTH = 1.0
-#     CAR_LENGTH = 2.0
-
-#     for i in range(ob.shape[0]):
-#         x_ob, y_ob = ob[i]
-
-#         for ix, iy in zip(x_far, y_far):
-#             # Xác định 4 góc của xe
-#             corners = [
-#                 (ix - CAR_LENGTH / 2, iy - CAR_WIDTH / 2),
-#                 (ix - CAR_LENGTH / 2, iy + CAR_WIDTH / 2),
-#                 (ix + CAR_LENGTH / 2, iy - CAR_WIDTH / 2),
-#                 (ix + CAR_LENGTH / 2, iy + CAR_WIDTH / 2)
-#             ]
-
-#             # Kiểm tra xem bất kỳ góc nào có va chạm không
-#             for cx, cy in corners:
-#                 if (x_ob - cx) ** 2 + (y_ob - cy) ** 2 <= ROBOT_RADIUS ** 2:
-#                     return False  # Có va chạm
-
-#     return True  # Không có va chạm
-
 def check_paths(fplist, ob):
     """Hàm check_paths được sử dụng để kiểm tra các quỹ đạo (paths)
     trong danh sách fplist dựa trên các ràng buộc động học và tránh va chạm. 
@@ -617,97 +495,6 @@ def cartesian_to_frenet(x, y, yaw, csp):
 
     return s, d, d_d, d_dd
 
-
-# def cartesian_to_frenet(x, y, yaw, csp):
-#     """
-#     Chuyển đổi tọa độ Cartesian sang Frenet dựa trên đường spline tham chiếu.
-
-#     Args:
-#         x (float): Tọa độ x của xe.
-#         y (float): Tọa độ y của xe.
-#         yaw (float): Góc phương vị của xe (radians).
-#         csp (CubicSpline2D): Đường spline tham chiếu.
-
-#     Returns:
-#         s (float): Vị trí dọc theo spline.
-#         d (float): Khoảng cách vuông góc đến spline.
-#         d_d (float): Tốc độ vuông góc.
-#         d_dd (float): Gia tốc vuông góc.
-#     """
-#     # Tìm giá trị s gần nhất trên spline
-#     s_min = 0.0
-#     s_max = csp.s[-1]
-#     ds = 0.1  # Bước tìm kiếm
-#     s_best = s_min
-#     min_dist = float('inf')
-
-#     for s_tmp in np.arange(s_min, s_max, ds):
-#         x_tmp, y_tmp = csp.calc_position(s_tmp)
-#         dist = np.hypot(x_tmp - x, y_tmp - y)
-#         if dist < min_dist:
-#             min_dist = dist
-#             s_best = s_tmp
-
-#     # Tính toán các giá trị dựa trên s_best
-#     s = s_best
-#     x_ref, y_ref = csp.calc_position(s)
-#     yaw_ref = csp.calc_yaw(s)
-#     d = np.hypot(x - x_ref, y - y_ref)
-
-#     # Xác định hướng của d (trái hay phải spline)
-#     cross_product = (x - x_ref) * -np.sin(yaw_ref) + (y - y_ref) * np.cos(yaw_ref)
-#     if cross_product < 0:
-#         d *= -1
-
-#     # Tính tốc độ và gia tốc vuông góc
-#     dx = x - x_ref
-#     dy = y - y_ref
-#     v_ref = np.array([np.cos(yaw_ref), np.sin(yaw_ref)])
-#     v_cartesian = np.array([dx, dy])
-
-#     # Tốc độ vuông góc
-#     d_d = np.dot(v_cartesian, [-v_ref[1], v_ref[0]])
-
-#     # Gia tốc vuông góc (giả sử không có dữ liệu gia tốc thêm)
-#     d_dd = 0.0
-
-#     return s, d, d_d, d_dd
-
-# def project_onto_path(x, y, tx, ty):
-#     """
-#     Project the point (x, y) onto the closest segment of the target course (tx, ty).
-#     Returns the projected point (px, py).
-#     """
-#     min_dist = float('inf')
-#     closest_point = None
-    
-#     # Loop over each segment of the target course
-#     for i in range(len(tx) - 1):
-#         # Calculate vector for the current segment
-#         segment_start = np.array([tx[i], ty[i]])
-#         segment_end = np.array([tx[i+1], ty[i+1]])
-#         segment_vec = segment_end - segment_start
-        
-#         # Vector from the segment start to the current point
-#         point_vec = np.array([x, y]) - segment_start
-        
-#         # Project the point onto the segment
-#         segment_length = np.linalg.norm(segment_vec)
-#         if segment_length == 0:
-#             continue
-            
-#         projection = np.dot(point_vec, segment_vec) / segment_length
-#         projection = np.clip(projection, 0, segment_length)
-        
-#         projected_point = segment_start + (projection / segment_length) * segment_vec
-#         dist_to_projected = np.linalg.norm(projected_point - np.array([x, y]))
-        
-#         if dist_to_projected < min_dist:
-#             min_dist = dist_to_projected
-#             closest_point = projected_point
-
-#     return closest_point
-
 def project_onto_path(x, y, tx, ty):
     """
     Project the point (x, y) onto the closest segment of the target course (tx, ty).
@@ -781,67 +568,6 @@ def course_to_waypoint(current_lat, current_long, target_lat, target_long):
         a2 += math.pi * 2
     return math.degrees(a2)
 
-# def pure_pursuit_control_frenet(lat, lon, optimal_path, current_idx, x, y,yaw, lookahead_distance, WB):
-#     """
-#     Pure Pursuit controller for following the optimal trajectory by finding the
-#     lookahead point as the point on the path at the lookahead distance.
-#     """
-#     try:
-#         path_x = optimal_path.x
-#         path_y = optimal_path.y
-#     except:
-#         path_x = optimal_path.x
-#         path_y = optimal_path.y
-#     # Circle center is the car's current position
-#     car_pos = np.array([x, y])
-#     lookahead_point = None
-
-#     # Find the closest point on the path (we'll use a simple Euclidean distance)
-#     min_distance = float('inf')
-#     closest_idx = current_idx
-
-#     for idx in range(current_idx, len(path_x)):
-#         path_point = np.array([path_x[idx], path_y[idx]])
-#         distance_to_point = np.linalg.norm(car_pos - path_point)
-
-#         if distance_to_point < min_distance:
-#             min_distance = distance_to_point
-#             closest_idx = idx
-
-#     # Now find the lookahead point from the closest point
-#     lookahead_point = np.array([path_x[closest_idx], path_y[closest_idx]])
-
-#     # Calculate the vector from the car position to the lookahead point
-#     lookahead_vector = lookahead_point - car_pos
-#     lookahead_distance_actual = np.linalg.norm(lookahead_vector)
-
-#     if lookahead_distance_actual < lookahead_distance:
-#         # If the closest point is less than the lookahead distance, find the next point
-#         for idx in range(closest_idx + 1, len(path_x)):
-#             path_point = np.array([path_x[idx], path_y[idx]])
-#             distance_to_point = np.linalg.norm(car_pos - path_point)
-
-#             if distance_to_point >= lookahead_distance:
-#                 lookahead_point = path_point
-#                 break
-
-#     # Calculate the steering angle towards the lookahead point
-#     lookahead_lat, lookahead_lon = xy_to_lat_lon(lookahead_point[0], lookahead_point[1])
-    
-#     # alpha = course_to_waypoint(lat, lon, lookahead_lat, lookahead_lon) - yaw
-    
-#     alpha = calculate_heading_from_gps(lat, lon, lookahead_lat, lookahead_lon) - np.rad2deg(yaw)
-#     # print("heading: ",calculate_heading_from_gps(lat, lon, lookahead_lat, lookahead_lon))
-    
-#     alpha = - np.arctan2(lookahead_point[1] - y, lookahead_point[0] - x) + yaw
-    
-#     # alpha = (alpha + 180) % 360 - 180  # Normalize to [-180, 180]
-#     # alpha = math.radians(alpha)
-    
-#     steering_angle = np.arctan2(2.0 * WB * np.sin(alpha), lookahead_distance) * 180/np.pi
-#     # steering_angle_deg = np.degrees(steering_angle)
-#     steering_angle = np.clip(steering_angle, -30, 30)
-#     return steering_angle, closest_idx, lookahead_point
 
 def find_lookahead_point(x, y, lookahead_distance, path_x, path_y):
     """

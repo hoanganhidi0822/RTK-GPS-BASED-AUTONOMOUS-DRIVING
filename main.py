@@ -197,7 +197,7 @@ def main():
     alpha_speed = 0.9
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.88   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.85   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
 
     # --- Main Loop --- #
     while True:
@@ -350,7 +350,7 @@ def main():
                 send_zero_speed = True
                 zero_speed_sent = False
 
-            ### ----- TANG TOC DOT NGOT ------####################################################
+            # ----- TANG TOC DOT NGOT ------####################################################
             if gps_speed < 1.5 and delta_speed > 0.5:
                 speed_filtered = 3
 
