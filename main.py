@@ -193,18 +193,14 @@ def main():
     count_none = 0
     target_speed = 9
     speed_filtered = 5
-    alpha_speed = 0.9
+    alpha_speed = 0.95
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.9   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.8   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     prev_gps_time = 0
     max_delta_speed =0
-
-   
-    prev_gps_speed = 0
     send_zero_speed = False
     zero_speed_sent = False
-
     # --- Main Loop --- #
     while True:
         
@@ -329,11 +325,11 @@ def main():
 
             # Người vẫn còn sau 1.5 giây => dừng xe
             elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-                stm32(angle=int(-0), speed=int(0), brake_state=0)
+                # stm32(angle=int(-0), speed=int(1), brake_state=0)
                 play_ = collision_sound.play()
                 play_.wait_done()
                 stop_triggered = True
-                print("\n[ALERT] Người xuất hiện liên tục trong 1.5s – Dừng xe!")
+                print("\n[ALERT] Người xuất hiện liên tục trong 0.1s – Dừng xe!")
 
             # Nếu người đã rời đi và đủ thời gian (3 giây) thì cho xe chạy lại
             if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 3.0:
@@ -341,58 +337,39 @@ def main():
                 resume_timer = None
                 print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
 
+            if 'prev_gps_speed' not in globals():
+                prev_gps_speed = gps_speed
+
             delta_speed = gps_speed - prev_gps_speed
             prev_gps_speed = gps_speed
 
+        
+             # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
+            if gps_speed < 1.0 and delta_speed < -0.5:
+                send_zero_speed = True
+                zero_speed_sent = False
 
-            # ############################################################################################
-            # prev_gps_time = time.time()  # Khởi tạo thời điểm ban đầu
-
-            # delta_time = current_time - prev_gps_time  # Tính delta_time
-            # delta_speed = (gps_speed - prev_gps_speed) / delta_time  # Gia tốc thực (m/s²)
-            # print(f"[LOG] Delta Speed: {delta_speed}")
-
-            # prev_gps_speed = gps_speed  # Lưu tốc độ hiện tại cho lần sau
-            # prev_gps_time = current_time  # Cập nhật thời gian
-
-            # # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
-            # if gps_speed < 4.0 and (target_speed > 8): #and delta_speed < 1
-            #     send_zero_speed = True
-            #     zero_speed_sent = False
-            #     reset_start_time = time.time()  # Ghi lại thời điểm reset
-            
-            # # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
-            # if send_zero_speed:
-            #     if not zero_speed_sent:
-            #         # Gửi lệnh tốc độ 0 ngay lập tức
-            #         target_speed = 0
-            #         speed_filtered = 0
-            #         zero_speed_sent = True
-            #         stm32(angle=int(steering_filtered), speed=int(0), brake_state=0)
-
-            #     # Kiểm tra thời gian reset
-            #     if (time.time() - reset_start_time) >= 0.5:
-            #         send_zero_speed = False
-            #         zero_speed_sent = False
-            #         reset_start_time = None
-            #         speed_filtered = 9  # Khôi phục tốc độ sau reset
+            ### ----- TANG TOC DOT NGOT ------####################################################
+            if gps_speed < 2 and delta_speed > 0.5:
+                speed_filtered = 2
 
 
-            # # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
-            # if send_zero_speed and zero_speed_sent:
-            #     speed_filtered =  9
-            #     send_zero_speed = False  # Reset lại cờ
+            ######################################################################################
+            # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
+            if send_zero_speed and not zero_speed_sent:
+                target_speed = 0
+                zero_speed_sent = True
+                return target_speed  # Gửi 0 rồi kết thúc sớm
 
-
-            # ----- TANG TOC DOT NGOT ------####################################################
-            if gps_speed < 3 and delta_speed > 1:
-                speed_filtered = 3
+            # --------- TIẾP TỤC CHU TRÌNH SAU KHI ĐÃ GỬI 0 --------- #
+            if send_zero_speed and zero_speed_sent:
+                send_zero_speed = False  # Reset lại cờ
 
             #######################################################################################
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
-            if gps_speed > 8:
-                target_speed = 1  # Giảm tốc
-            elif gps_speed <= 7.5:
+            if gps_speed >= 10:
+                target_speed = 5  # Giảm tốc
+            elif gps_speed < 8:
                 target_speed = 10  # Tăng tốc
             else:
                 target_speed = 9  # Duy trì tốc độ ổn định
@@ -450,6 +427,7 @@ def main():
                         rtk_bad_start = None
                         rtk_resume_start = None
                         
+                        
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
@@ -469,12 +447,12 @@ def main():
 
             if should_stop:
                 pass
-                stm32(angle=int(-0), speed=int(0), brake_state=0)
+                stm32(angle=int(-0), speed=int(1), brake_state=0)
             else:
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1
                 if count == 1:
-                    stm32(angle=round(steering_filtered * 1.0), speed=round(speed_filtered), brake_state=0)
+                    stm32(angle=int(steering_filtered * 1.0), speed=int(speed_filtered), brake_state=0)
                     count = 0
 
             ############################################################################################################################ 
@@ -482,6 +460,7 @@ def main():
         # Check if the goal is reached
         if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
             gps_speed = "Goal reached!"
+            cf.camera_error = 1
             # stm32(angle=0, speed=0, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play()
