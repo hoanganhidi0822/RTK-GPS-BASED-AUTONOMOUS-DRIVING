@@ -9,7 +9,7 @@ import time
 from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
-from road_segmentation import get_steering_angle 
+from OBSTACLES.road_segmentation import get_steering_angle 
 camera_index = 2
 
 cf.det_image = np.zeros((480, 640, 3))
@@ -119,12 +119,12 @@ def process_depth():
 
         # Mat tin hieu gps
         if cf.seg_mode == 1:
-            angle = get_steering_angle(rgb, debug=1)
+            angle, overlay = get_steering_angle(rgb, debug=1)
             cf.seg_steer = angle
             print(f"[INFO] Steering angle: {angle:.2f} degrees")
 
         # Infer depth
-        elif cf.should_stop == 0 and count_frame % 3 == 0:
+        elif cf.seg_mode == 0 and count_frame % 3 == 0:
             count_frame = 0
             with torch.no_grad(), torch.amp.autocast('cuda'):  
                 results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
@@ -186,7 +186,10 @@ def process_depth():
             obstacles = []
             persons = []
 
-        cf.image = raw_frame
+        # if cf.seg_mode == 1:
+        #     cf.image = overlay
+        # else:
+            cf.image = raw_frame
 
         # Tính FPS trung bình
         delta_t = time.time() - time_start

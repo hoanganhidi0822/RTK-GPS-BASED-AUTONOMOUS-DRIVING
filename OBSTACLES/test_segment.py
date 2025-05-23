@@ -1,7 +1,7 @@
 from road_segmentation import get_steering_angle  # giả sử bạn lưu ở steering_module.py
 import cv2
 
-cap = cv2.VideoCapture("/mnt/NewVolume/Documents/Researches/2024_Project/Depth Map-Based Obstacle Position Detection/DATA_XE/video1.mp4")
+cap = cv2.VideoCapture(2)
 while True:
     ret, frame = cap.read()
     if not ret:

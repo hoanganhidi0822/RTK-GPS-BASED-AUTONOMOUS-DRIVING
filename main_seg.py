@@ -9,7 +9,7 @@ from HD_MAP.HDMAP import *
 from CONTROLLER.utils.communication import STM32
 from OPTIMAL_TRAJECTORY.frenet_optimal_trajectory import *
 camera_index = 0
-from OBSTACLES.obstacle import process_depth
+from OBSTACLES.obstacle_seg import process_depth
 import sys
 from VISUALIZATION.visualization import *
 from VOICE.voice import *
@@ -489,7 +489,7 @@ def main():
         time_start = time.time()
 
         ############# DEBUG #########################################################
-        print(f"\r[INFO] Curvature: {curvature:.2f}, GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
+        print(f"\r[INFO] Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
         ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:

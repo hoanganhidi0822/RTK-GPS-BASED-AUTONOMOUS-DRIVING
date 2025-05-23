@@ -9,7 +9,7 @@ from math import radians, sin, cos, sqrt, atan2
 from Assistance_Astar.overlay import *
 from Assistance_Astar.location_finder  import *
 from RTK_GPS.GPS_module import *
-from main import gps_ser
+from main_seg import gps_ser
 
 class Graph:
     def __init__(self):

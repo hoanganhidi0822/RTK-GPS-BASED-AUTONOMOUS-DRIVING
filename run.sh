@@ -1,4 +1,4 @@
 #!/bin/bash
 sudo chmod 777 /dev/ttyUSB0
 sudo chmod 777 /dev/ttyUSB1
-python main.py
+python main_seg.py

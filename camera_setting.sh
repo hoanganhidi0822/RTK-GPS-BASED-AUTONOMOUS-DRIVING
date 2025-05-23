@@ -66,8 +66,8 @@ v4l2-ctl -d $DEVICE -c auto_exposure=3                      # Auto (Aperture Pri
 v4l2-ctl -d $DEVICE -c exposure_time_absolute=156           # Mặc định
 v4l2-ctl -d $DEVICE -c exposure_dynamic_framerate=1
 
-v4l2-ctl -d $DEVICE -c brightness=140
-v4l2-ctl -d $DEVICE -c contrast=24
+v4l2-ctl -d $DEVICE -c brightness=128
+v4l2-ctl -d $DEVICE -c contrast=28
 v4l2-ctl -d $DEVICE -c saturation=64
 v4l2-ctl -d $DEVICE -c hue=0
 
