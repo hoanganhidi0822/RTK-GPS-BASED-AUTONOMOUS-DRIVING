@@ -20,6 +20,10 @@ cf.camera_error = 0
 cf.seg_mode = 0
 cf.seg_steer = 0
 
+DEPTH_SCALE_FACTOR = 1.25
+MAX_DEPTH = 30
+MAX_X = 4
+
 # Select device
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(f"Using device: {device}")
@@ -104,7 +108,7 @@ def process_depth():
     global persons
     fps = 0
     i = 0
-    count_frame = 2
+    count_frame = 1
     while 1:
         time_start = time.time()
         ret, raw_frame = cap.read()
@@ -121,10 +125,11 @@ def process_depth():
         if cf.seg_mode == 1:
             angle, overlay = get_steering_angle(rgb, debug=1)
             cf.seg_steer = angle
-            print(f"[INFO] Steering angle: {angle:.2f} degrees")
+            # cf.image = overlay 
+            # print(f"[INFO] Steering angle: {angle:.2f} degrees")
 
         # Infer depth
-        elif cf.seg_mode == 0 and count_frame % 3 == 0:
+        elif cf.seg_mode == 0 and count_frame % 2 == 0:
             count_frame = 0
             with torch.no_grad(), torch.amp.autocast('cuda'):  
                 results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
@@ -134,6 +139,7 @@ def process_depth():
             # depth_visulize = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 255.0
             
             # Run YOLO Detector
+            found_new_data = False
             for predictions in results:
                 for bbox in predictions.boxes:
                     class_id = int(bbox.cls.cpu().numpy()[0])
@@ -145,8 +151,8 @@ def process_depth():
                         continue
 
                     depth_value = np.median(depth_values_bbox)
-                    scale_factor = 1.25
-                    z_camera = (65535 / depth_value) * scale_factor
+                    DEPTH_SCALE_FACTOR = 1.25
+                    z_camera = (65535 / depth_value) * DEPTH_SCALE_FACTOR
                     center_x = (xmin + xmax) / 2
                     center_y = (ymin + ymax) / 2
 
@@ -167,29 +173,32 @@ def process_depth():
                     real_coords = rotation_matrix @ camera_coords
                     x_real, z_real = real_coords[0], real_coords[2]
 
-                    if class_id == 0:
-                        persons.append((x_real, z_real))
-                    elif class_id in [2, 5, 7]:
-                        obstacles.append((x_real, z_real))
-                    
+                    if z_real < MAX_DEPTH and abs(x_real) < MAX_X:
+                        if class_id == 0:
+                            persons.append((x_real, z_real))
+                        elif class_id in [2, 5, 7]:
+                            obstacles.append((x_real, z_real))
+                        
 
-                    cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
+                        cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
 
-                    # Hiển thị thông tin
-                    cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-           
+                        # Hiển thị thông tin
+                        cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             cf.obstacles = obstacles
             cf.persons = persons
             obstacles = []
             persons = []
 
-        # if cf.seg_mode == 1:
-        #     cf.image = overlay
-        # else:
-            cf.image = raw_frame
+        try:
+            if cf.seg_mode == 1:
+                cf.image = overlay
+            else:
+                cf.image = raw_frame
+        except NameError:
+            cf.image = raw_frame  # fallback an toàn nếu overlay chưa được tạo
+
 
         # Tính FPS trung bình
         delta_t = time.time() - time_start

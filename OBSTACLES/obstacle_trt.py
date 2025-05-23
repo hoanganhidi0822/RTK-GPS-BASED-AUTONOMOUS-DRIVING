@@ -84,7 +84,7 @@ def process_depth(engine_path):
             # depth = cv2.resize(depth, (frame.shape[1], frame.shape[0]))
             # colored_depth = cv2.applyColorMap(depth, cv2.COLORMAP_PLASMA)
             
-            f# Run YOLO Detector
+            # Run YOLO Detector
             for predictions in results:
                 for bbox in predictions.boxes:
                     class_id = int(bbox.cls.cpu().numpy()[0])

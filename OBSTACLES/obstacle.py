@@ -158,8 +158,9 @@ def process_depth():
                 rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
                 real_coords = rotation_matrix @ camera_coords
                 x_real, z_real = real_coords[0], real_coords[2]
-            
-                if 1:
+
+                
+                if z_real < 30:
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
 
                     # Hiển thị thông tin
@@ -167,10 +168,10 @@ def process_depth():
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
             
-                if class_id == 0:
-                    persons.append((x_real, z_real))
-                elif class_id == 2 or class_id == 5 or class_id == 7:
-                    obstacles.append((x_real, z_real))
+                    if class_id == 0:
+                        persons.append((x_real, z_real))
+                    elif class_id == 2 or class_id == 5 or class_id == 7:
+                        obstacles.append((x_real, z_real))
                 
             
         depth_display = depth_visulize.astype(np.uint8)

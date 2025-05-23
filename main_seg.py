@@ -195,7 +195,7 @@ def main():
     count_none = 0
     target_speed = 9
     speed_filtered = 5
-    alpha_speed = 0.95
+    alpha_speed = 0.96
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
     alpha_steering = 0.75   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
@@ -345,16 +345,14 @@ def main():
             delta_speed = gps_speed - prev_gps_speed
             prev_gps_speed = gps_speed
 
-        
-             # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
+            # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
             if gps_speed < 1.0 and delta_speed < -0.5:
                 send_zero_speed = True
                 zero_speed_sent = False
 
-            ### ----- TANG TOC DOT NGOT ------####################################################
+            # ----- TANG TOC DOT NGOT ------####################################################
             if gps_speed < 2 and delta_speed > 0.5:
                 speed_filtered = 2
-
 
             ######################################################################################
             # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
@@ -387,7 +385,7 @@ def main():
 
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) > 0 or len(persons) > 0:
-                target_speed = min(target_speed, 8)
+                target_speed = min(target_speed, 7)
 
             # Reset sau khi xử lý
             obstacles = []
@@ -441,20 +439,33 @@ def main():
 
             ########## --- CONTROL COMMAND  ---- #############
             steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
-            # Ưu tiên: dừng vì người > seg_mode > bình thường
+
+            # Biến lưu thời gian bắt đầu vào chế độ segmentation
+            if seg_mode and seg_mode_start_time is None:
+                seg_mode_start_time = current_time
+
+            # Thời gian đệm trước khi dùng seg_steer (ví dụ 1.5 giây)
+            seg_delay = 2.0
+
             if should_stop:
-                # Dừng hẳn
-                target_speed = 1
+                target_speed   = 1
                 steering_angle = 0
             elif seg_mode:
-                # GPS yếu, dùng phân đoạn ảnh
-                target_speed = 6
-                steering_angle = cf.seg_steer
-            else:
+                
+                if current_time - seg_mode_start_time < seg_delay:
+                    steering_angle = car_steer  # giữ góc lái cũ để xe đi tiếp hướng trước đó
+                    target_speed = 1
+                else:
+                    steering_angle = cf.seg_steer  # sau delay mới dùng segmentation
+                    target_speed = 5
+                    alpha_steering = 0.9
+
+            else: 
+                seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
                 steering_angle = car_steer
+                alpha_steering = 0.75
 
             # Low-pass filter: steering
-            
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
 
             # Low-pass filter: target speed
@@ -464,7 +475,6 @@ def main():
             if count == 1:
                 stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
                 count = 0
-
 
             ############################################################################################################################ 
             persons = [] 
