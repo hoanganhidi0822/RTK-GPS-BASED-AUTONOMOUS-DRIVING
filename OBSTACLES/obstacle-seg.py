@@ -9,7 +9,7 @@ import time
 from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
-
+from road_segmentation import get_steering_angle 
 camera_index = 2
 
 cf.det_image = np.zeros((480, 640, 3))
@@ -17,6 +17,8 @@ cf.depth_image = np.zeros((480, 640, 3))
 cf.obstacles = []
 cf.persons = []
 cf.camera_error = 0
+cf.seg_mode = 0
+cf.seg_steer = 0
 
 # Select device
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -113,82 +115,80 @@ def process_depth():
 
         count_frame += 1
         raw_frame = cv2.remap(raw_frame, map1, map2, interpolation=cv2.INTER_LINEAR)
+        rgb = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2RGB)
+
+        # Mat tin hieu gps
+        if cf.seg_mode == 1:
+            angle = get_steering_angle(rgb, debug=1)
+            cf.seg_steer = angle
+            print(f"[INFO] Steering angle: {angle:.2f} degrees")
 
         # Infer depth
-        i=i+1
-        if count_frame % 3 == 0:
+        elif cf.should_stop == 0 and count_frame % 3 == 0:
             count_frame = 0
             with torch.no_grad(), torch.amp.autocast('cuda'):  
                 results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
                 depth_map = depth_anything.infer_image(raw_frame, args.input_size)
         
-        depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 65535
-        depth_visulize = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 255.0
-        
-        # Run YOLO Detector
-        for predictions in results:
-            for bbox in predictions.boxes:
-                class_id = int(bbox.cls.cpu().numpy()[0])
-                if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
-                    continue
-                xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
-                depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
-                if depth_values_bbox.size == 0:
-                    continue
-
-                depth_value = np.median(depth_values_bbox)
-                scale_factor = 1.25
-                z_camera = (65535 / depth_value) * scale_factor
-                center_x = (xmin + xmax) / 2
-                center_y = (ymin + ymax) / 2
-
-                intrinsic_matrix = np.array([
-                    [267,  0  , 293],
-                    [ 0 , 267 , 245],
-                    [ 0 ,  0  ,  1 ]
-                ])
-                
-                """ 267.97  0.00    293.59
-                    0.00    265.42  245.49
-                    0.00    0.00     1.00"""
-
-                pixel_coords = np.array([center_x, center_y, 1])
-                camera_coords = np.linalg.inv(intrinsic_matrix) @ (pixel_coords * z_camera)
-
-                rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
-                real_coords = rotation_matrix @ camera_coords
-                x_real, z_real = real_coords[0], real_coords[2]
+            depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 65535
+            # depth_visulize = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 255.0
             
-                if 1:
+            # Run YOLO Detector
+            for predictions in results:
+                for bbox in predictions.boxes:
+                    class_id = int(bbox.cls.cpu().numpy()[0])
+                    if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
+                        continue
+                    xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
+                    depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
+                    if depth_values_bbox.size == 0:
+                        continue
+
+                    depth_value = np.median(depth_values_bbox)
+                    scale_factor = 1.25
+                    z_camera = (65535 / depth_value) * scale_factor
+                    center_x = (xmin + xmax) / 2
+                    center_y = (ymin + ymax) / 2
+
+                    intrinsic_matrix = np.array([
+                        [267,  0  , 293],
+                        [ 0 , 267 , 245],
+                        [ 0 ,  0  ,  1 ]
+                    ])
+                    
+                    """ 267.97  0.00    293.59
+                        0.00    265.42  245.49
+                        0.00    0.00     1.00"""
+
+                    pixel_coords = np.array([center_x, center_y, 1])
+                    camera_coords = np.linalg.inv(intrinsic_matrix) @ (pixel_coords * z_camera)
+
+                    rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
+                    real_coords = rotation_matrix @ camera_coords
+                    x_real, z_real = real_coords[0], real_coords[2]
+
+                    if class_id == 0:
+                        persons.append((x_real, z_real))
+                    elif class_id in [2, 5, 7]:
+                        obstacles.append((x_real, z_real))
+                    
+
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
 
                     # Hiển thị thông tin
                     cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            
-            
-                if class_id == 0:
-                    persons.append((x_real, z_real))
-                elif class_id == 2 or class_id == 5 or class_id == 7:
-                    obstacles.append((x_real, z_real))
-                
-            
-        depth_display = depth_visulize.astype(np.uint8)
-    
-        depth_display = (cmap(depth_display)[:, :, :3] * 255).astype(np.uint8)  # Bỏ [:, :, ::-1]
 
-        if depth_display.shape[:2] != raw_frame.shape[:2]:
-            depth_display = cv2.resize(depth_display, (raw_frame.shape[1], raw_frame.shape[0]))
+           
 
-        cf.obstacles = obstacles
-        cf.persons = persons
+            cf.obstacles = obstacles
+            cf.persons = persons
+            obstacles = []
+            persons = []
+
         cf.image = raw_frame
-        cf.depth_image = depth_visulize
-        obstacles = []
-        persons = []
 
-        # Tính FPS trung bình mượt
-        # Trong vòng lặp while:
+        # Tính FPS trung bình
         delta_t = time.time() - time_start
         instantaneous_fps = 1.0 / delta_t if delta_t > 0 else 0.0
         fps_window.append(instantaneous_fps)

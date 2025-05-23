@@ -53,6 +53,7 @@ cf.rtk_status = "No Fix"
 cf.persons = []
 cf.speed = 0
 cf.camera_error = 0
+cf.seg_mode = 0
 cf.seg_steer = 0
 
 def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_speed):
@@ -197,7 +198,7 @@ def main():
     alpha_speed = 0.95
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.8   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.75   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     prev_gps_time = 0
     max_delta_speed =0
     send_zero_speed = False
@@ -394,6 +395,7 @@ def main():
 
             #################### --- STOP --- ###################################
             should_stop = False
+            seg_mode = False  # dùng segmentation để điều khiển khi mất GPS
             # 1. Camera lỗi
             if cf.camera_error == 1:
                 print("[WARNING] Camera error – Dừng xe!")
@@ -414,7 +416,7 @@ def main():
                     rtk_resume_start = None
                     print("[WARNING] RTK mất Fixed – Dừng xe ngay!")
                 gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
-                should_stop = True
+                seg_mode = True 
 
             else:  # cf.rtk_status == "RTK Fixed"
                 if rtk_bad:
@@ -427,34 +429,42 @@ def main():
                         rtk_bad = False
                         rtk_bad_start = None
                         rtk_resume_start = None
-                        
-                        
+                        seg_mode = False  
+                    # if still in bad state, keep should_stop True
+                    else:
+                        gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
+                        seg_mode = True
+                else:
+                    seg_mode = False
 
-                # if still in bad state, keep should_stop True
-                if rtk_bad:
-                    gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
-                    should_stop = True
-
-
+            cf.seg_mode = seg_mode
 
             ########## --- CONTROL COMMAND  ---- #############
+            steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
+            # Ưu tiên: dừng vì người > seg_mode > bình thường
+            if should_stop:
+                # Dừng hẳn
+                target_speed = 1
+                steering_angle = 0
+            elif seg_mode:
+                # GPS yếu, dùng phân đoạn ảnh
+                target_speed = 6
+                steering_angle = cf.seg_steer
+            else:
+                steering_angle = car_steer
 
             # Low-pass filter: steering
-            steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
+            
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
 
             # Low-pass filter: target speed
             speed_filtered = alpha_speed * speed_filtered + (1 - alpha_speed) * target_speed
 
-            if should_stop:
-                pass
-                stm32(angle=int(-0), speed=int(1), brake_state=0)
-            else:
-                # Cho xe chạy nếu mọi thứ ổn định
-                count += 1
-                if count == 1:
-                    stm32(angle=int(steering_filtered * 1.0), speed=int(speed_filtered), brake_state=0)
-                    count = 0
+            count += 1
+            if count == 1:
+                stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
+                count = 0
+
 
             ############################################################################################################################ 
             persons = [] 
