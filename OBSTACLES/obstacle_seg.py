@@ -173,7 +173,7 @@ def process_depth():
                 real_coords = rotation_matrix @ camera_coords
                 x_real, z_real = real_coords[0], real_coords[2]
                 
-                if z_real < 30:
+                if z_real < 30 and x_real < 3:
                     if class_id == 0:
                         persons.append((x_real, z_real))
                     elif class_id == 2 or class_id == 5 or class_id == 7:
@@ -183,7 +183,7 @@ def process_depth():
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
 
                     # Hiển thị thông tin
-                    cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
+                    cv2.putText(raw_frame, f"X: {x_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         cf.obstacles = obstacles
