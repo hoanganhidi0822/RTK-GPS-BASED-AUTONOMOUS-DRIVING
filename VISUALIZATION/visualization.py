@@ -657,6 +657,7 @@ class MapDisplayFrame(QFrame):
                 self.face_timer.stop()
                 self.camera_timer.start(60) 
                 self.stacked_layout.setCurrentWidget(self.main_widget)
+                self.show_main_view()
 
                 # Ưu tiên người quen
                 if "Thay Giang" in names_detected:
