@@ -1,4 +1,4 @@
-from road_segmentation import get_steering_angle
+from OBSTACLES.Segformer.road_segmentation import get_steering_angle
 import cv2
 import matplotlib.pyplot as plt
 

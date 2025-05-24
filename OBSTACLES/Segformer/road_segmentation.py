@@ -8,11 +8,11 @@ from OBSTACLES.Segformer.config import VIS_LABEL_MAP as LABEL_COLORS_LIST
 import time
 # --- Thiết lập thông số ---
 DEVICE = 'cuda'  # hoặc 'cpu'
-MODEL_PATH = 'Segformer/model_iou_v1'
+MODEL_PATH = 'OBSTACLES/Segformer/model_iou_v1'
 IMAGE_SIZE = (640, 480)
 ROAD_CLASS = 1
 ROWS_TO_CHECK = [160, 180, 200, 230, 300]
-WEIGHTS = np.array([0.25, 0.5, 0.15, 0.15, 0.05], dtype=np.float32)
+WEIGHTS = np.array([0.25, 0.5, 0.17, 0.15, 0.05], dtype=np.float32)
 X_REF = 320  # Vị trí trung tâm ảnh tham chiếu
 
 # --- Load model 1 lần ---
@@ -20,8 +20,6 @@ extractor = SegformerFeatureExtractor()
 model = SegformerForSemanticSegmentation.from_pretrained(MODEL_PATH).to(DEVICE).eval()
 
 # --- Biến toàn cục cho PID ---
-
-
 def Find_center_points_from_labels(labels: np.ndarray, rows, road_class=1):
     result = []
     for h in rows:

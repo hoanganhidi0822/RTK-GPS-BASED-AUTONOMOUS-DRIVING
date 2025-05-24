@@ -9,7 +9,7 @@ import time
 from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
-from OBSTACLES.road_segmentation import get_steering_angle 
+from OBSTACLES.Segformer.road_segmentation import get_steering_angle 
 camera_index = 2
 
 cf.det_image = np.zeros((480, 640, 3))
@@ -173,23 +173,23 @@ def process_depth():
                     real_coords = rotation_matrix @ camera_coords
                     x_real, z_real = real_coords[0], real_coords[2]
 
-                    if z_real < MAX_DEPTH and abs(x_real) < MAX_X:
+                    if z_real < MAX_DEPTH :
                         if class_id == 0:
                             persons.append((x_real, z_real))
                         elif class_id in [2, 5, 7]:
                             obstacles.append((x_real, z_real))
                         
 
-                        cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
+                        cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
 
                         # Hiển thị thông tin
                         cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            cf.obstacles = obstacles
-            cf.persons = persons
-            obstacles = []
-            persons = []
+        cf.obstacles = obstacles
+        cf.persons = persons
+        obstacles = []
+        persons = []
 
         try:
             if cf.seg_mode == 1:
