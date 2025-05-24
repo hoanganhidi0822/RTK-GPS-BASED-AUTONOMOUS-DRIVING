@@ -139,52 +139,52 @@ def process_depth():
             # depth_visulize = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 255.0
             
             # Run YOLO Detector
-            found_new_data = False
-            for predictions in results:
-                for bbox in predictions.boxes:
-                    class_id = int(bbox.cls.cpu().numpy()[0])
-                    if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
-                        continue
-                    xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
-                    depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
-                    if depth_values_bbox.size == 0:
-                        continue
+        found_new_data = False
+        for predictions in results:
+            for bbox in predictions.boxes:
+                class_id = int(bbox.cls.cpu().numpy()[0])
+                if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
+                    continue
+                xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
+                depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
+                if depth_values_bbox.size == 0:
+                    continue
 
-                    depth_value = np.median(depth_values_bbox)
-                    DEPTH_SCALE_FACTOR = 1.25
-                    z_camera = (65535 / depth_value) * DEPTH_SCALE_FACTOR
-                    center_x = (xmin + xmax) / 2
-                    center_y = (ymin + ymax) / 2
+                depth_value = np.median(depth_values_bbox)
+                DEPTH_SCALE_FACTOR = 1.25
+                z_camera = (65535 / depth_value) * DEPTH_SCALE_FACTOR
+                center_x = (xmin + xmax) / 2
+                center_y = (ymin + ymax) / 2
 
-                    intrinsic_matrix = np.array([
-                        [267,  0  , 293],
-                        [ 0 , 267 , 245],
-                        [ 0 ,  0  ,  1 ]
-                    ])
+                intrinsic_matrix = np.array([
+                    [267,  0  , 293],
+                    [ 0 , 267 , 245],
+                    [ 0 ,  0  ,  1 ]
+                ])
+                
+                """ 267.97  0.00    293.59
+                    0.00    265.42  245.49
+                    0.00    0.00     1.00"""
+
+                pixel_coords = np.array([center_x, center_y, 1])
+                camera_coords = np.linalg.inv(intrinsic_matrix) @ (pixel_coords * z_camera)
+
+                rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
+                real_coords = rotation_matrix @ camera_coords
+                x_real, z_real = real_coords[0], real_coords[2]
+                
+                if z_real < 30:
+                    if class_id == 0:
+                        persons.append((x_real, z_real))
+                    elif class_id == 2 or class_id == 5 or class_id == 7:
+                        obstacles.append((x_real, z_real))
                     
-                    """ 267.97  0.00    293.59
-                        0.00    265.42  245.49
-                        0.00    0.00     1.00"""
 
-                    pixel_coords = np.array([center_x, center_y, 1])
-                    camera_coords = np.linalg.inv(intrinsic_matrix) @ (pixel_coords * z_camera)
+                    cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
 
-                    rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
-                    real_coords = rotation_matrix @ camera_coords
-                    x_real, z_real = real_coords[0], real_coords[2]
-
-                    if z_real < MAX_DEPTH :
-                        if class_id == 0:
-                            persons.append((x_real, z_real))
-                        elif class_id in [2, 5, 7]:
-                            obstacles.append((x_real, z_real))
-                        
-
-                        cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
-
-                        # Hiển thị thông tin
-                        cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    # Hiển thị thông tin
+                    cv2.putText(raw_frame, f"Dist: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         cf.obstacles = obstacles
         cf.persons = persons

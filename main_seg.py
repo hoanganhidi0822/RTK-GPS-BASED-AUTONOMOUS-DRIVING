@@ -16,9 +16,9 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-# gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
 stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
-gps_ser = 1
+# gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
@@ -80,11 +80,11 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    # lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    lat, lon, car_heading, rtk_status, speed = 10.8535405900,106.7715386783,185, "Float", 15
-    time.sleep(0.1)
+    # lat, lon, car_heading, rtk_status, speed = 10.8535405900,106.7715386783,185, "Float", 15
+    # time.sleep(0.1)
     
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -388,7 +388,7 @@ def main():
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) > 0 or len(persons) > 0:
                 target_speed = min(target_speed, 7)
-                speed_filtered= 2
+                speed_filtered= 7
 
 
             # Reset sau khi xử lý

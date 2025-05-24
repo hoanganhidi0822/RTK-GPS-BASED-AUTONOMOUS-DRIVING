@@ -1,4 +1,4 @@
-DEVICE="/dev/video2"
+DEVICE="/dev/video0"
 
 # Tắt chế độ phơi sáng tự động
 # 🔻 Tắt tự động phơi sáng → chuyển về Manual
@@ -22,5 +22,5 @@ v4l2-ctl -d $DEVICE -c white_balance_automatic=0
 v4l2-ctl -d $DEVICE -c white_balance_temperature=6000
 
 # Tùy chỉnh thêm nếu cần
-v4l2-ctl -d $DEVICE -c brightness=5
+v4l2-ctl -d $DEVICE -c brightness=50
 v4l2-ctl -d $DEVICE -c saturation=65
