@@ -300,12 +300,12 @@ def main():
                 denominator = (dx**2 + dy**2)**1.5 + 1e-6  # tránh chia 0
                 curvature = numerator / denominator
 
+                # print(f"Curvature: {curvature}")
                 if curvature > 0.1:
                     target_speed = min(target_speed, 5)
 
             except Exception as e:
                 print("[WARNING] Curvature calc failed:", e)
-
 
             danger_zone = 1.6  # mét
 
@@ -409,7 +409,7 @@ def main():
                 should_stop = True
 
             # 3) RTK‑status hysteresis
-            if cf.rtk_status != "RTK Fixed" and cf.rtk_status != "RTK Float":
+            if cf.rtk_status != "RTK Fixed":
 
                 # just lost RTK
                 if not rtk_bad:
@@ -449,20 +449,24 @@ def main():
                 seg_mode_start_time = current_time
 
             # Thời gian đệm trước khi dùng seg_steer (ví dụ 1.5 giây)
-            seg_delay = 2.0
+            seg_delay = 4.0
 
             if should_stop:
                 target_speed   = 1
                 steering_angle = 0
             elif seg_mode:
                 
-                if current_time - seg_mode_start_time < seg_delay:
-                    steering_angle = car_steer  # giữ góc lái cũ để xe đi tiếp hướng trước đó
-                    target_speed = 1
+                if curvature > 0.15:
+                    if current_time - seg_mode_start_time < seg_delay:
+                        steering_angle = car_steer     # giữ góc lái cũ để xe đi tiếp hướng trước đó
+                        target_speed = 7
+                    else:
+                        steering_angle = cf.seg_steer  # sau delay mới dùng segmentation
+                        target_speed = 7
+                        alpha_steering = 0.9
                 else:
-                    steering_angle = cf.seg_steer  # sau delay mới dùng segmentation
-                    target_speed = 6
-                    alpha_steering = 0.9
+                    steering_angle = cf.seg_steer
+                    target_speed = 7
 
             else: 
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
@@ -504,7 +508,7 @@ def main():
         time_start = time.time()
 
         ############# DEBUG #########################################################
-        print(f"\r[INFO] Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, Steering angle: {round(steering_angle)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
+        print(f"\r[INFO] Curvature: {curvature}, Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
       
         ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:

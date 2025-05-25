@@ -194,7 +194,7 @@ def main():
     count_none = 0
     target_speed = 9
     speed_filtered = 5
-    alpha_speed = 0.95
+    alpha_speed = 0.92
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
     alpha_steering = 0.8   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
@@ -344,7 +344,6 @@ def main():
             delta_speed = gps_speed - prev_gps_speed
             prev_gps_speed = gps_speed
 
-        
              # --------- PHÁT HIỆN GIẢM TỐC ĐỘ BẤT THƯỜNG (LỖI PHẦN CỨNG) --------- ###############
             if gps_speed < 1.0 and delta_speed < -0.5:
                 send_zero_speed = True
@@ -353,7 +352,6 @@ def main():
             ### ----- TANG TOC DOT NGOT ------####################################################
             if gps_speed < 2 and delta_speed > 0.5:
                 speed_filtered = 2
-
 
             ######################################################################################
             # --------- GỬI target_speed = 0 ĐỂ RESET MẠCH --------- #
@@ -392,7 +390,7 @@ def main():
             obstacles = []
             persons = []
 
-            #################### --- STOP --- ###################################
+            #################### --- STOP --- -------------  ----------------###
             should_stop = False
             # 1. Camera lỗi
             if cf.camera_error == 1:
@@ -427,18 +425,13 @@ def main():
                         rtk_bad = False
                         rtk_bad_start = None
                         rtk_resume_start = None
-                        
-                        
 
                 # if still in bad state, keep should_stop True
                 if rtk_bad:
                     gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                     should_stop = True
 
-
-
             ########## --- CONTROL COMMAND  ---- #############
-
             # Low-pass filter: steering
             steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
@@ -448,7 +441,7 @@ def main():
 
             if should_stop:
                 pass
-                stm32(angle=int(-0), speed=int(1), brake_state=0)
+                stm32(angle=int(-0), speed=int(1), brake_state=1)
             else:
                 # Cho xe chạy nếu mọi thứ ổn định
                 count += 1

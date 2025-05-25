@@ -173,7 +173,7 @@ def process_depth():
                 real_coords = rotation_matrix @ camera_coords
                 x_real, z_real = real_coords[0], real_coords[2]
                 
-                if z_real < 30 and x_real < 3:
+                if z_real < 30 and abs(x_real) < 5:
                     if class_id == 0:
                         persons.append((x_real, z_real))
                     elif class_id == 2 or class_id == 5 or class_id == 7:

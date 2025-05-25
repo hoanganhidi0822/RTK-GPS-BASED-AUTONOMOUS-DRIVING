@@ -1,4 +1,4 @@
-DEVICE="/dev/video0"
+DEVICE="/dev/video2"
 
 # Tắt chế độ phơi sáng tự động
 # 🔻 Tắt tự động phơi sáng → chuyển về Manual
