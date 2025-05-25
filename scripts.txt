@@ -13,3 +13,15 @@ Chào mừng quý vị và các bạn đến với Tòa nhà Việt Đức. Đâ
 
 Co Khi Dong  Luc
 Điểm đến tiếp theo của chúng ta là Khoa Cơ khí Động lực. Đây là một trong những khoa kỹ thuật mũi nhọn của trường, nơi đào tạo ra các kỹ sư tài năng trong lĩnh vực cơ khí, ô  tô, nhiệt và năng lượng. Với hệ thống xưởng thực hành hiện đại và đội ngũ giảng viên giàu kinh nghiệm, Khoa Cơ khí Động lực luôn đi đầu trong nghiên cứu và ứng dụng công nghệ mới. Chúc các bạn sinh viên gặt hái nhiều thành công trong học tập và nghiên cứu tại đây!"
+
+
+
+Traceback (most recent call last):
+  File "/home/hoang-anh/miniconda3/envs/car/lib/python3.11/threading.py", line 1039, in _bootstrap_inner
+    self.run()
+  File "/home/hoang-anh/miniconda3/envs/car/lib/python3.11/threading.py", line 976, in run
+    self._target(*self._args, **self._kwargs)
+  File "/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/main_seg.py", line 97, in depth_thread
+    process_depth()
+  File "/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/OBSTACLES/obstacle_seg.py", line 143, in process_depth
+    for predictions in results:

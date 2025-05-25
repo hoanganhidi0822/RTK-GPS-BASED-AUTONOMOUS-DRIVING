@@ -179,9 +179,7 @@ def process_depth():
                     elif class_id == 2 or class_id == 5 or class_id == 7:
                         obstacles.append((x_real, z_real))
                     
-
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
-
                     # Hiển thị thông tin
                     cv2.putText(raw_frame, f"X: {x_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)

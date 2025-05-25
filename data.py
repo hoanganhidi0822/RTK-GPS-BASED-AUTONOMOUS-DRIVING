@@ -2,7 +2,7 @@ import cv2
 import os
 
 # Cấu hình
-camera_index = 0  # Thường là 0, có thể thay đổi nếu bạn có nhiều camera
+camera_index = 2  # Thường là 0, có thể thay đổi nếu bạn có nhiều camera
 output_folder = "captured_images"
 save_every_n_frames = 10
 
@@ -17,7 +17,7 @@ if not cap.isOpened():
     exit()
 
 frame_count = 0
-image_count = 0
+image_count = 269
 
 print("Đang đọc từ camera. Nhấn 'q' để thoát.")
 
@@ -37,9 +37,9 @@ while True:
         image_count += 1
 
     # Hiển thị frame để theo dõi
-    cv2.imshow("Camera", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    # cv2.imshow("Camera", frame)
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
 
 # Giải phóng tài nguyên
 cap.release()

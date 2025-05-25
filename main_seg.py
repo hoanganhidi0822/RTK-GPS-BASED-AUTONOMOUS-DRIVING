@@ -236,7 +236,6 @@ def main():
             obs.append(transform_obstacle_to_global(x, y, yaw, obstacle[1], obstacle[0]))
 
         ob = np.array(obs)
- 
         # ------------------------- Generate optimal path ------------------------- #
         optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
@@ -390,7 +389,6 @@ def main():
                 target_speed = min(target_speed, 7)
                 speed_filtered= 7
 
-
             # Reset sau khi xử lý
             obstacles = []
             persons = []
@@ -411,7 +409,6 @@ def main():
             # 3) RTK‑status hysteresis
             if cf.rtk_status != "RTK Fixed":
 
-                # just lost RTK
                 if not rtk_bad:
                     rtk_bad = True
                     rtk_bad_start = current_time
@@ -420,7 +417,7 @@ def main():
                 gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
                 seg_mode = True 
 
-            else:  # cf.rtk_status == "RTK Fixed"
+            else:  
                 if rtk_bad:
                     # start counting “good” time
                     if rtk_resume_start is None:
@@ -448,27 +445,27 @@ def main():
             if seg_mode and seg_mode_start_time is None:
                 seg_mode_start_time = current_time
 
-            # Thời gian đệm trước khi dùng seg_steer (ví dụ 1.5 giây)
-            seg_delay = 4.0
+          
+            # Thời gian đệm trước khi dùng seg_steer (giây)
+            seg_delay_cua = 6.0
+            seg_delay_thang = 2.0
 
             if should_stop:
-                target_speed   = 1
-                steering_angle = 0
+                target_speed = 1
+                steering_angle = car_steer
+
             elif seg_mode:
-                
-                if curvature > 0.15:
-                    if current_time - seg_mode_start_time < seg_delay:
-                        steering_angle = car_steer     # giữ góc lái cũ để xe đi tiếp hướng trước đó
-                        target_speed = 7
-                    else:
-                        steering_angle = cf.seg_steer  # sau delay mới dùng segmentation
-                        target_speed = 7
-                        alpha_steering = 0.9
+                delay = seg_delay_cua if curvature > 0.07 else seg_delay_thang
+                alpha_steering = 0.9 if curvature > 0.07 else 0.7
+
+                if current_time - seg_mode_start_time < delay:
+                    steering_angle = car_steer
                 else:
                     steering_angle = cf.seg_steer
-                    target_speed = 7
 
-            else: 
+                target_speed = 7
+
+            else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
                 steering_angle = car_steer
                 alpha_steering = 0.75
@@ -483,7 +480,6 @@ def main():
             if count == 1:
                 stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
                 count = 0
-
 
         ####-----------------------------------------------------------------------------------------------------------#### 
             persons = [] 

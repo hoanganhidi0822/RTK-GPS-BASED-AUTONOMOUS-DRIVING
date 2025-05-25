@@ -26,7 +26,7 @@ def Find_center_points_from_labels(labels: np.ndarray, rows, road_class=1):
         row = labels[h] == road_class
         indices = np.flatnonzero(row)
         if len(indices) == 0:
-            center_x = 130
+            center_x = 320
         else:
             center_x = (indices[0] + indices[-1]) // 2
         result.append((center_x, h))
@@ -64,7 +64,7 @@ def PID(error, p, i, d):
 
 # fig, ax = plt.subplots(figsize=(10, 6))
 # plt.ion()
-def get_steering_angle(image: np.ndarray, p=0.25, i=0.0001,d = 0.001, debug: bool = False) -> int:
+def get_steering_angle(image: np.ndarray, p=0.2, i=0.0001,d = 0.0, debug: bool = False) -> int:
     """
     Dự đoán segmentation, tính trung điểm road, tính error và trả về góc lái.
     

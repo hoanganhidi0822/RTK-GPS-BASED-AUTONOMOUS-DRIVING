@@ -684,7 +684,7 @@ class MapDisplayFrame(QFrame):
         if self.cap.isOpened():
             self.cap.release()
 
-        def play_():
+        def play_and_then():
             if name == "Thay Giang":
                 file_path = "VISUALIZATION/voice/hieugiang.mp3"
             elif name == "Thay Hai":
@@ -700,7 +700,7 @@ class MapDisplayFrame(QFrame):
             sound = sound.apply_gain(6) 
             play(sound)
 
-        play_()
+        threading.Thread(target=play_and_then).start()
 
     def show_camera_view(self):
 
