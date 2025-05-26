@@ -77,6 +77,8 @@ def get_steering_angle(image: np.ndarray, p=0.2, i=0.0001,d = 0.0, debug: bool =
     labels = predict(model, extractor, image_resized, DEVICE).cpu().numpy()
 
     center_points = Find_center_points_from_labels(labels, ROWS_TO_CHECK, road_class=ROAD_CLASS)
+
+    
     x_coords = np.fromiter((pt[0] for pt in center_points), dtype=np.int32)
     error = np.dot(WEIGHTS, x_coords) - X_REF
 

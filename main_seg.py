@@ -111,6 +111,23 @@ def slow_down_speed(distance, max_speed):
     """
     return int(max_speed * (1 / (1 + math.exp(5 - 1 * distance))))  # 5 và 1 là các hệ số điều chỉnh
 
+def get_target_direction(optimal_path, n_points=5):
+    if len(optimal_path.x) < n_points:
+        return None
+    dx = optimal_path.x[n_points - 1] - optimal_path.x[0]
+    dy = optimal_path.y[n_points - 1] - optimal_path.y[0]
+    angle = np.arctan2(dy, dx)
+    return angle  # hướng rẽ tính theo radian
+
+def classify_turn(angle, threshold=np.deg2rad(45)):
+    if angle > threshold:
+        return "left"
+    elif angle < -threshold:
+        return "right"
+    else:
+        return "straight"
+
+
 def main():
     print(__file__ + " start!!")
     cf.record = 1
@@ -446,6 +463,27 @@ def main():
                 seg_mode_start_time = current_time
 
           
+            # Góc điều khiển ban đầu từ GPS
+            steering_angle = car_steer
+
+            # Ghi lại thời gian bắt đầu chế độ segmentation
+            if seg_mode and seg_mode_start_time is None:
+                seg_mode_start_time = current_time
+
+            # Tính toán hướng rẽ từ optimal path
+            if optimal_path is not None:
+                turn_angle = get_target_direction(optimal_path)
+                if turn_angle is not None:
+                    turn_type = classify_turn(turn_angle)
+                else:
+                    turn_type = "straight"
+            else:
+                turn_type = "straight"
+
+            # Xác định có đang rẽ không
+            is_turning = curvature > 0.07 or turn_type in ["left", "right"]
+
+
             # Thời gian đệm trước khi dùng seg_steer (giây)
             seg_delay_cua = 6.0
             seg_delay_thang = 2.0
@@ -455,11 +493,16 @@ def main():
                 steering_angle = car_steer
 
             elif seg_mode:
-                delay = seg_delay_cua if curvature > 0.07 else seg_delay_thang
-                alpha_steering = 0.9 if curvature > 0.07 else 0.7
+                delay = seg_delay_cua if is_turning  else seg_delay_thang
+                alpha_steering = 0.9  if is_turning  else 0.7
 
                 if current_time - seg_mode_start_time < delay:
-                    steering_angle = car_steer
+                    if turn_type == "left":
+                        steering_angle = -12  # chỉnh theo hệ thống của bạn
+                    elif turn_type == "right":
+                        steering_angle = 12 
+                    else:
+                        steering_angle = car_steer
                 else:
                     steering_angle = cf.seg_steer
 
