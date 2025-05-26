@@ -222,6 +222,7 @@ def main():
     zero_speed_sent = False
     seg_mode_start_time = None
     turn_type = 'straight'
+    still_turning = False
     # --- Main Loop --- #
     while True:
         
@@ -387,7 +388,7 @@ def main():
             #######################################################################################
             # --------- GIAO ĐỘNG TỐC ĐỘ DỰA TRÊN GPS SPEED --------- #
             if gps_speed >= 10:
-                target_speed = 5  # Giảm tốc
+                target_speed = 4  # Giảm tốc
             elif gps_speed < 8:
                 target_speed = 10  # Tăng tốc
             else:
@@ -404,8 +405,8 @@ def main():
 
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) > 0 or len(persons) > 0:
-                target_speed = min(target_speed, 7)
-                speed_filtered= 7
+                target_speed = min(target_speed, 8)
+                speed_filtered= 8
 
             # Reset sau khi xử lý
             obstacles = []
@@ -457,33 +458,28 @@ def main():
             cf.seg_mode = seg_mode
 
             ########## --- CONTROL COMMAND  ---- #############
-            steering_angle = car_steer  # hoặc bất kỳ thuật toán tính góc lái nào bạn dùng
-
-            # Biến lưu thời gian bắt đầu vào chế độ segmentation
-            if seg_mode and seg_mode_start_time is None:
-                seg_mode_start_time = current_time
-
-          
+ 
             # Góc điều khiển ban đầu từ GPS
             steering_angle = car_steer
 
             # Ghi lại thời gian bắt đầu chế độ segmentation
             if seg_mode and seg_mode_start_time is None:
                 seg_mode_start_time = current_time
+                speed_filtered = 3
 
             # Tính toán hướng rẽ từ optimal path
-            if optimal_path is not None:
-                turn_angle = get_target_direction(optimal_path)
-                if turn_angle is not None:
-                    turn_type = classify_turn(np.rad2deg(alpha_pure_pursuit),threshold=10)
-                else:
-                    turn_type = "straight"
-            else:
-                turn_type = "straight"
+            
+                
+            turn_type = classify_turn(np.rad2deg(alpha_pure_pursuit),threshold=10)
+                
+            # Cập nhật trạng thái còn đang rẽ
+            if turn_type in ["left", "right"] and abs(np.rad2deg(alpha_pure_pursuit)) > 10:
+                still_turning = True
+            elif abs(np.rad2deg(alpha_pure_pursuit)) < 8:  # thêm độ trễ khi thoát cua
+                still_turning = False
 
             # Xác định có đang rẽ không
             is_turning = curvature > 0.07 or turn_type in ["left", "right"]
-
 
             # Thời gian đệm trước khi dùng seg_steer (giây)
             seg_delay_cua = 6.0
@@ -495,25 +491,21 @@ def main():
                 steering_angle = car_steer
 
             elif seg_mode:
-                delay = seg_delay_cua if is_turning  else seg_delay_thang
-                alpha_steering = 0.9  if is_turning  else 0.7
+                delay = seg_delay_cua if still_turning else seg_delay_thang
+                alpha_steering = 0.9 if still_turning else 0.7
 
-                if current_time - seg_mode_start_time < delay:
-                    if turn_type == "left":
-                        steering_angle = car_steer # chỉnh theo hệ thống của bạn
-                    elif turn_type == "right":
-                        steering_angle = car_steer 
-                    else:
-                        steering_angle = car_steer
+                if current_time - seg_mode_start_time < delay  or still_turning:
+                    steering_angle = car_steer   
                 else:
                     steering_angle = cf.seg_steer
 
                 target_speed = 7
+                # speed_filtered = 7
 
             else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
                 steering_angle = car_steer
-                alpha_steering = 0.75
+                alpha_steering = 0.8
 
             # Low-pass filter: steering
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle

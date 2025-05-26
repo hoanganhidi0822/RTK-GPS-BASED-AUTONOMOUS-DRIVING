@@ -9,7 +9,11 @@ OBSTACLES/image*/*.png
 # Bỏ qua tất cả các file .pt, .pth trên toàn bộ repo
 *.pt
 *.pth
-
+*.bin
+*.json
+*.safetensors
+*.png
+*.jpg
 # Bỏ qua file mô hình khác nếu có
 *.onnx
 
