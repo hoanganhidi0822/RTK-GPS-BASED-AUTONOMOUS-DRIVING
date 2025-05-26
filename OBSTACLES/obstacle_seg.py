@@ -109,6 +109,7 @@ def process_depth():
     fps = 0
     i = 0
     count_frame = 1
+    results = []
     while 1:
         time_start = time.time()
         ret, raw_frame = cap.read()
@@ -125,12 +126,18 @@ def process_depth():
         if cf.seg_mode == 1:
             angle, overlay = get_steering_angle(rgb, debug=1)
             cf.seg_steer = angle
+
+            if  count_frame % 4 == 0:
+                with torch.no_grad(), torch.amp.autocast('cuda'):  
+                    results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
+                    depth_map = depth_anything.infer_image(raw_frame, args.input_size)
+                    
+                depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min()) * 65535
             # cf.image = overlay 
             # print(f"[INFO] Steering angle: {angle:.2f} degrees")
 
         # Infer depth
         elif cf.seg_mode == 0 and count_frame % 2 == 0:
-            count_frame = 0
             with torch.no_grad(), torch.amp.autocast('cuda'):  
                 results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
                 depth_map = depth_anything.infer_image(raw_frame, args.input_size)
@@ -205,4 +212,4 @@ def process_depth():
 
         if len(fps_window) == fps_window.maxlen:
             avg_fps = sum(fps_window) / len(fps_window)
-            print(f" --- [INFO] Perception FPS: {avg_fps:.2f}")
+            # print(f" --- [INFO] Perception FPS: {avg_fps:.2f}")

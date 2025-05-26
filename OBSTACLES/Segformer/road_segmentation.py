@@ -8,7 +8,7 @@ from OBSTACLES.Segformer.config import VIS_LABEL_MAP as LABEL_COLORS_LIST
 import time
 # --- Thiết lập thông số ---
 DEVICE = 'cuda'  # hoặc 'cpu'
-MODEL_PATH = 'OBSTACLES/Segformer/model_iou_v1'
+MODEL_PATH = 'OBSTACLES/Segformer/model_iou_v2'
 IMAGE_SIZE = (640, 480)
 ROAD_CLASS = 1
 ROWS_TO_CHECK = [160, 180, 200, 230, 300]

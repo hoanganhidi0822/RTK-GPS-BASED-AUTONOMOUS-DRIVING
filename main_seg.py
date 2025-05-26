@@ -16,8 +16,8 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
+stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
 # gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -111,7 +111,7 @@ def slow_down_speed(distance, max_speed):
     """
     return int(max_speed * (1 / (1 + math.exp(5 - 1 * distance))))  # 5 và 1 là các hệ số điều chỉnh
 
-def get_target_direction(optimal_path, n_points=5):
+def get_target_direction(optimal_path, n_points=10):
     if len(optimal_path.x) < n_points:
         return None
     dx = optimal_path.x[n_points - 1] - optimal_path.x[0]
@@ -119,11 +119,11 @@ def get_target_direction(optimal_path, n_points=5):
     angle = np.arctan2(dy, dx)
     return angle  # hướng rẽ tính theo radian
 
-def classify_turn(angle, threshold=np.deg2rad(45)):
+def classify_turn(angle, threshold=15):
     if angle > threshold:
-        return "left"
-    elif angle < -threshold:
         return "right"
+    elif angle < -threshold:
+        return "left"
     else:
         return "straight"
 
@@ -221,6 +221,7 @@ def main():
     send_zero_speed = False
     zero_speed_sent = False
     seg_mode_start_time = None
+    turn_type = 'straight'
     # --- Main Loop --- #
     while True:
         
@@ -296,7 +297,7 @@ def main():
         #####----------------------------------------------------------------------------------------------------------------------------#####
         if x is not None:
             # Pure Pursuit control: use the optimal path from Frenet
-            car_steer,  lookahead_point = pure_pursuit_control_frenet(float(lat), float(lon), optimal_path, x, y,yaw, lookahead_distance, L)
+            car_steer,  alpha_pure_pursuit = pure_pursuit_control_frenet(float(lat), float(lon), optimal_path, x, y,yaw, lookahead_distance, L)
             
             s0 , c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
             c_d_d = optimal_path.d_d[1]
@@ -474,7 +475,7 @@ def main():
             if optimal_path is not None:
                 turn_angle = get_target_direction(optimal_path)
                 if turn_angle is not None:
-                    turn_type = classify_turn(turn_angle)
+                    turn_type = classify_turn(np.rad2deg(alpha_pure_pursuit),threshold=10)
                 else:
                     turn_type = "straight"
             else:
@@ -486,10 +487,11 @@ def main():
 
             # Thời gian đệm trước khi dùng seg_steer (giây)
             seg_delay_cua = 6.0
-            seg_delay_thang = 2.0
+            seg_delay_thang = 3.0
 
             if should_stop:
                 target_speed = 1
+                speed_filtered = 1
                 steering_angle = car_steer
 
             elif seg_mode:
@@ -498,9 +500,9 @@ def main():
 
                 if current_time - seg_mode_start_time < delay:
                     if turn_type == "left":
-                        steering_angle = -12  # chỉnh theo hệ thống của bạn
+                        steering_angle = car_steer # chỉnh theo hệ thống của bạn
                     elif turn_type == "right":
-                        steering_angle = 12 
+                        steering_angle = car_steer 
                     else:
                         steering_angle = car_steer
                 else:
@@ -530,7 +532,7 @@ def main():
         if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
             gps_speed = "Goal reached!"
             cf.camera_error = 1
-            # stm32(angle=0, speed=0, brake_state=1) 
+            stm32(angle=0, speed=0, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play()
             play__.wait_done()
@@ -547,7 +549,7 @@ def main():
         time_start = time.time()
 
         ############# DEBUG #########################################################
-        print(f"\r[INFO] Curvature: {curvature}, Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}, --- [INFO] MAIN FPS: {round(fps, 2)}", end=" ")
+        print(f"\r[INFO] Dir: {turn_type}, Steer: {car_steer} Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}", end=" ")
       
         ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:

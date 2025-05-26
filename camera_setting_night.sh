@@ -1,8 +1,8 @@
-DEVICE="/dev/video2"
+DEVICE="/dev/video0"
 
 # Tắt chế độ phơi sáng tự động
 # 🔻 Tắt tự động phơi sáng → chuyển về Manual
-sudo v4l2-ctl -d $DEVICE -c auto_exposure=1        # Manual Mode
+sudo v4l2-ctl -d $DEVICE -c auto_exposure=3       # Manual Mode
 # 🔻 Giảm thời gian phơi sáng → giảm sáng, tránh cháy
 sudo v4l2-ctl -d $DEVICE -c exposure_time_absolute=120
 
@@ -19,8 +19,8 @@ sudo v4l2-ctl -d $DEVICE -c sharpness=20
 
 # Tắt cân bằng trắng tự động (nếu chỉnh tay)
 v4l2-ctl -d $DEVICE -c white_balance_automatic=0
-v4l2-ctl -d $DEVICE -c white_balance_temperature=6000
+v4l2-ctl -d $DEVICE -c white_balance_temperature=5000
 
 # Tùy chỉnh thêm nếu cần
-v4l2-ctl -d $DEVICE -c brightness=5
+v4l2-ctl -d $DEVICE -c brightness=150
 v4l2-ctl -d $DEVICE -c saturation=65

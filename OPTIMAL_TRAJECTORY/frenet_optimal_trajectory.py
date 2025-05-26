@@ -616,14 +616,14 @@ def pure_pursuit_control_frenet(lat, lon, optimal_path, x, y, yaw, lookahead_dis
     # Tìm điểm lookahead dựa vào giao điểm giữa đường tròn và đường thẳng
     lookahead_point = find_lookahead_point(x, y, lookahead_distance, path_x, path_y)
 
-    # Tính góc alpha giữa hướng xe và lookahead point
+    # Tính góc alpha giữa hướng xe và lookahead point: radian
     alpha = np.arctan2(lookahead_point[1] - y, lookahead_point[0] - x) - yaw
 
     # Tính góc lái bằng công thức Pure Pursuit
     steering_angle = -np.arctan2(2.0 * WB * np.sin(alpha), lookahead_distance) * 180/np.pi
     steering_angle = np.clip(steering_angle, -35, 35)
 
-    return steering_angle, lookahead_point
+    return steering_angle, alpha 
 
 def calculate_speed_at_projected_point(projected_point, nearest_idx, csp):
     """
