@@ -14,7 +14,7 @@ MINT = 4.0                # min prediction time [m]
 TARGET_SPEED = 18 / 3.6   # target speed [m/s]
 D_T_S = 0.1 / 3.6         # target speed sampling length [m/s]
 N_S_SAMPLE = 1            # sampling number of target speed
-ROBOT_RADIUS = 2.3       # robot radius [m]
+ROBOT_RADIUS = 2.2      # robot radius [m]
 
 # cost weights Trajectory 
 KJ = 0.1

@@ -655,7 +655,7 @@ class MapDisplayFrame(QFrame):
             if self.face_detect_frame_count >= 12 and not self.face_detect_triggered:
                 self.face_detect_triggered = True
                 self.face_timer.stop()
-                self.camera_timer.start(60) 
+                self.camera_timer.start(20) 
                 self.stacked_layout.setCurrentWidget(self.main_widget)
                 self.show_main_view()
 

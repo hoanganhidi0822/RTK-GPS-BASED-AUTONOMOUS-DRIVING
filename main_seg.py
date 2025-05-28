@@ -16,8 +16,8 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
-stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
 # gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -55,6 +55,7 @@ cf.speed = 0
 cf.camera_error = 0
 cf.seg_mode = 0
 cf.seg_steer = 0
+cf.is_intersection = 0
 
 def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_speed):
     cf.tx                 = tx
@@ -85,6 +86,7 @@ def update_state(ser):
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
     # lat, lon, car_heading, rtk_status, speed = 10.8535405900,106.7715386783,185, "Float", 15
     # time.sleep(0.1)
+    rtk_status = "Single"
     
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -119,7 +121,7 @@ def get_target_direction(optimal_path, n_points=10):
     angle = np.arctan2(dy, dx)
     return angle  # hướng rẽ tính theo radian
 
-def classify_turn(angle, threshold=15):
+def classify_turn(angle, threshold=7):
     if angle > threshold:
         return "right"
     elif angle < -threshold:
@@ -215,7 +217,7 @@ def main():
     alpha_speed = 0.96
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.75   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.83   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     prev_gps_time = 0
     max_delta_speed =0
     send_zero_speed = False
@@ -223,6 +225,7 @@ def main():
     seg_mode_start_time = None
     turn_type = 'straight'
     still_turning = False
+    is_intersection = 0
     # --- Main Loop --- #
     while True:
         
@@ -347,9 +350,11 @@ def main():
 
             # Người vẫn còn sau 1.5 giây => dừng xe
             elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-                # stm32(angle=int(-0), speed=int(1), brake_state=0)
+                stm32(angle=int(-0), speed=int(1), brake_state=0)
                 play_ = collision_sound.play()
                 play_.wait_done()
+                speed_filtered = 1
+                target_speed = 1
                 stop_triggered = True
                 print("\n[ALERT] Người xuất hiện liên tục trong 0.1s – Dừng xe!")
 
@@ -405,8 +410,15 @@ def main():
 
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) > 0 or len(persons) > 0:
-                target_speed = min(target_speed, 8)
-                speed_filtered= 8
+                if gps_speed > 7.0:
+                    target_speed = 6  # từ từ giảm
+                elif gps_speed < 6.5:
+                    target_speed = 9  # tăng nhẹ để đạt ~7
+                else:
+                    target_speed = 7  # đã ổn định
+                speed_filtered = target_speed
+
+
 
             # Reset sau khi xử lý
             obstacles = []
@@ -465,17 +477,17 @@ def main():
             # Ghi lại thời gian bắt đầu chế độ segmentation
             if seg_mode and seg_mode_start_time is None:
                 seg_mode_start_time = current_time
-                speed_filtered = 3
+                speed_filtered = 5
 
-            # Tính toán hướng rẽ từ optimal path
             
-                
-            turn_type = classify_turn(np.rad2deg(alpha_pure_pursuit),threshold=10)
+            is_intersection = cf.is_intersection
+            
+            turn_type = classify_turn(steering_angle,threshold=7)
                 
             # Cập nhật trạng thái còn đang rẽ
-            if turn_type in ["left", "right"] and abs(np.rad2deg(alpha_pure_pursuit)) > 10:
+            if turn_type in ["left", "right"] and abs(steering_angle) > 7:
                 still_turning = True
-            elif abs(np.rad2deg(alpha_pure_pursuit)) < 8:  # thêm độ trễ khi thoát cua
+            elif abs(steering_angle) < 8:  # thêm độ trễ khi thoát cua
                 still_turning = False
 
             # Xác định có đang rẽ không
@@ -492,15 +504,14 @@ def main():
 
             elif seg_mode:
                 delay = seg_delay_cua if still_turning else seg_delay_thang
-                alpha_steering = 0.9 if still_turning else 0.7
+                alpha_steering = 0.8 if still_turning else 0.5
 
-                if current_time - seg_mode_start_time < delay  or still_turning:
+                if current_time - seg_mode_start_time < delay  or still_turning or is_intersection:
                     steering_angle = car_steer   
                 else:
                     steering_angle = cf.seg_steer
 
                 target_speed = 7
-                # speed_filtered = 7
 
             else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
@@ -521,15 +532,16 @@ def main():
         ####-----------------------------------------------------------------------------------------------------------#### 
             persons = [] 
         # Check if the goal is reached
-        if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
+        if np.isclose(x, tx[-1], atol = 2.5) and np.isclose(y, ty[-1], atol = 2.5):
             gps_speed = "Goal reached!"
             cf.camera_error = 1
-            stm32(angle=0, speed=0, brake_state=1) 
+            stm32(angle=0, speed=1, brake_state=1) 
             print("Goal reached!")
-            play__ = destination_sound.play()
+            play__ = destination_sound.play() 
             play__.wait_done()
+            stm32(angle=0, speed=0, brake_state=1) 
             return
-        
+        cf.seg_steer = steering_angle
         obstacles = []   
         persons = [] 
 

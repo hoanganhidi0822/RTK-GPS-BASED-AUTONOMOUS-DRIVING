@@ -1,7 +1,7 @@
 import os
 
-image_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/val/images'
-label_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/val/labels'
+image_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/train/images'
+label_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/train/labels'
 
 # Lấy danh sách tên file (không phần mở rộng) từ folder images
 image_names = {os.path.splitext(f)[0] for f in os.listdir(image_dir) if f.endswith(('.jpg', '.png', '.jpeg'))}

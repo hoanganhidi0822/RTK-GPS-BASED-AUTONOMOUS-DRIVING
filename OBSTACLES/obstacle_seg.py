@@ -19,6 +19,7 @@ cf.persons = []
 cf.camera_error = 0
 cf.seg_mode = 0
 cf.seg_steer = 0
+cf.is_intersection = 0
 
 DEPTH_SCALE_FACTOR = 1.25
 MAX_DEPTH = 30
@@ -124,8 +125,9 @@ def process_depth():
 
         # Mat tin hieu gps
         if cf.seg_mode == 1:
-            angle, overlay = get_steering_angle(rgb, debug=1)
+            angle, overlay, is_intersection = get_steering_angle(rgb, debug=1)
             cf.seg_steer = angle
+            cf.is_intersection = is_intersection
 
             if  count_frame % 4 == 0:
                 with torch.no_grad(), torch.amp.autocast('cuda'):  
@@ -180,7 +182,7 @@ def process_depth():
                 real_coords = rotation_matrix @ camera_coords
                 x_real, z_real = real_coords[0], real_coords[2]
                 
-                if z_real < 30 and abs(x_real) < 5:
+                if z_real < 30 and abs(x_real) <= 4:
                     if class_id == 0:
                         persons.append((x_real, z_real))
                     elif class_id == 2 or class_id == 5 or class_id == 7:
