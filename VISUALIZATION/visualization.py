@@ -230,7 +230,7 @@ class PlotCanvas(FigureCanvas):
         mid_x_rot, mid_y_rot     = rotate_array(mid_x, mid_y, inv_yaw)
         right_x_rot, right_y_rot = rotate_array(right_x, right_y, inv_yaw)
 
-        self.ax.plot(mid_x_rot,   mid_y_rot, "--y", linewidth=1.5)
+        self.ax.plot(mid_x_rot,   mid_y_rot, "--y", linewidth=3)
         self.ax.plot(left_x_rot,  left_y_rot, "whitesmoke", linewidth=2)
         self.ax.plot(right_x_rot, right_y_rot, "whitesmoke", linewidth=2)
 

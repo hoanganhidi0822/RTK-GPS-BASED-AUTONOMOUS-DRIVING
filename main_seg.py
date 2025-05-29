@@ -196,7 +196,7 @@ def main():
             pass  
 
     # Start thread for depth processing
-    time.sleep(1)
+    
     depth_thread_instance = threading.Thread(target=depth_thread)
     depth_thread_instance.daemon = True
     depth_thread_instance.start()
@@ -217,7 +217,7 @@ def main():
     alpha_speed = 0.96
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.83   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.82   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     prev_gps_time = 0
     max_delta_speed =0
     send_zero_speed = False
@@ -261,8 +261,6 @@ def main():
         # ------------------------- Generate optimal path ------------------------- #
         optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
-        # print(f"------------------ obstacles: {obstacle[1]}, {obstacle[0]} ------------------- person: {person[1]}, {person[0]}")
-
         # ------------------------- Optimal Path None => Replan
         while optimal_path is None:          
             print("optimal_path is None !!!")
@@ -292,7 +290,7 @@ def main():
                 # stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                stm32(angle=0, speed=0, brake_state=1)
+                stm32(angle=steering_filtered, speed=0, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obstacles = []
                 obs = [] 
@@ -328,7 +326,7 @@ def main():
             except Exception as e:
                 print("[WARNING] Curvature calc failed:", e)
 
-            danger_zone = 1.6  # mét
+            danger_zone = 1.5  # mét
 
             found_person = False
             for person in persons:
@@ -349,7 +347,7 @@ def main():
                     resume_timer = current_time  # Bắt đầu đếm để chạy lại
 
             # Người vẫn còn sau 1.5 giây => dừng xe
-            elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
+            elif found_person and not stop_triggered and (current_time - person_detected_time) > 0.01:
                 stm32(angle=int(steering_filtered), speed=int(1), brake_state=0)
                 play_ = collision_sound.play()
                 play_.wait_done()
@@ -413,12 +411,10 @@ def main():
                 if gps_speed > 7.0:
                     target_speed = 5  # từ từ giảm
                 elif gps_speed < 6.0:
-                    target_speed = 9  # tăng nhẹ để đạt ~7
+                    target_speed = 8  # tăng nhẹ để đạt ~7
                 else:
                     target_speed = 7  # đã ổn định
                 speed_filtered = target_speed
-
-
 
             # Reset sau khi xử lý
             obstacles = []
@@ -434,6 +430,7 @@ def main():
 
             # 2. Phát hiện người trong vùng nguy hiểm (đã được xử lý ở phần trước)
             if stop_triggered:
+                gps_speed = "SAFE MODE ACTIVATED – A person has been detected in the path. Please monitor the vehicle!"
                 print("[INFO] Người trong vùng nguy hiểm – Đang dừng xe.")
                 should_stop = True
 
@@ -445,7 +442,7 @@ def main():
                     rtk_bad_start = current_time
                     rtk_resume_start = None
                     print("[WARNING] RTK mất Fixed – Dừng xe ngay!")
-                gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
+                gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please monitor the vehicle!"
                 seg_mode = True 
 
             else:  
@@ -462,7 +459,7 @@ def main():
                         seg_mode = False  
                     # if still in bad state, keep should_stop True
                     else:
-                        gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please keep your hands on the steering wheel!"
+                        gps_speed = "SAFE MODE ACTIVATED – GPS SIGNAL IS WEAK. Please monitor the vehicle!"
                         seg_mode = True
                 else:
                     seg_mode = False
@@ -478,8 +475,7 @@ def main():
             if seg_mode and seg_mode_start_time is None:
                 seg_mode_start_time = current_time
                 speed_filtered = 5
-
-            
+   
             is_intersection = cf.is_intersection
             
             turn_type = classify_turn(steering_angle,threshold=7)
