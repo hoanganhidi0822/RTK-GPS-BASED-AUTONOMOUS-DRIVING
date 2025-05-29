@@ -16,8 +16,8 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
+stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
 # gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -86,7 +86,7 @@ def update_state(ser):
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
     # lat, lon, car_heading, rtk_status, speed = 10.8535405900,106.7715386783,185, "Float", 15
     # time.sleep(0.1)
-    rtk_status = "Single"
+    # rtk_status = "Single"
     
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -350,7 +350,7 @@ def main():
 
             # Người vẫn còn sau 1.5 giây => dừng xe
             elif found_person and not stop_triggered and (current_time - person_detected_time) >= 0.1:
-                stm32(angle=int(-0), speed=int(1), brake_state=0)
+                stm32(angle=int(steering_filtered), speed=int(1), brake_state=0)
                 play_ = collision_sound.play()
                 play_.wait_done()
                 speed_filtered = 1
@@ -411,8 +411,8 @@ def main():
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if len(obstacles) > 0 or len(persons) > 0:
                 if gps_speed > 7.0:
-                    target_speed = 6  # từ từ giảm
-                elif gps_speed < 6.5:
+                    target_speed = 5  # từ từ giảm
+                elif gps_speed < 6.0:
                     target_speed = 9  # tăng nhẹ để đạt ~7
                 else:
                     target_speed = 7  # đã ổn định
@@ -485,9 +485,9 @@ def main():
             turn_type = classify_turn(steering_angle,threshold=7)
                 
             # Cập nhật trạng thái còn đang rẽ
-            if turn_type in ["left", "right"] and abs(steering_angle) > 7:
+            if turn_type in ["left", "right"] and abs(steering_angle) > 7 or is_intersection:
                 still_turning = True
-            elif abs(steering_angle) < 8:  # thêm độ trễ khi thoát cua
+            else:  # thêm độ trễ khi thoát cua
                 still_turning = False
 
             # Xác định có đang rẽ không
@@ -495,7 +495,7 @@ def main():
 
             # Thời gian đệm trước khi dùng seg_steer (giây)
             seg_delay_cua = 6.0
-            seg_delay_thang = 3.0
+            seg_delay_thang = 1.0
 
             if should_stop:
                 target_speed = 1
@@ -511,7 +511,7 @@ def main():
                 else:
                     steering_angle = cf.seg_steer
 
-                target_speed = 7
+                target_speed = 6
 
             else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường

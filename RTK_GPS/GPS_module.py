@@ -41,7 +41,11 @@ def get_gps_data(ser):
     rtk_status = None
 
     while True:
-        gps_data = ser.readline().decode("utf8").strip()
+        # gps_data = ser.readline().decode("utf8").strip()
+        try:
+            gps_data = ser.readline ().decode("utf8").strip()
+        except UnicodeDecodeError:
+            continue
         if gps_data:
             try:
                 gps_data_split = gps_data.split(',')
@@ -69,6 +73,8 @@ def get_gps_data(ser):
                             rtk_status = "DGPS"
                         elif fix_quality == 1:
                             rtk_status = "Single"
+                        elif fix_quality == 6:
+                            rtk_status = "Fusion"
                         else:
                             rtk_status = "GPS Weak"
 

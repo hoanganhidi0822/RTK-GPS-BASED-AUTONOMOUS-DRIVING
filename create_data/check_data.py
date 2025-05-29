@@ -2,9 +2,9 @@ import os
 import cv2
 import numpy as np
 
-image_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/train/images'
-label_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/train/labels'
-output_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/SegFormer/input/data/data/DatasetUTE/train/overlays'
+image_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/create_data/augmented/images'
+label_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/create_data/augmented/labels'
+output_dir = '/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/create_data/augmented/overlays'
 os.makedirs(output_dir, exist_ok=True)
 
 alpha = 0.5  # độ trong suốt của lớp mask

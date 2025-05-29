@@ -7,10 +7,7 @@ def read_gps(port="/dev/ttyUSB0", baudrate=115200):
         while True:
             line = ser.readline().decode(errors='ignore').strip()
             gps_data_split = line.split(',')
-            if line.startswith("$GPYBM"):
-                    if len(gps_data_split) > 6 and gps_data_split[6]:
-                        heading = float(gps_data_split[6])
-                        print(f"Góc quay: {heading}°")
+            print(gps_data_split)
     except serial.SerialException as e:
         print(f"Lỗi kết nối serial: {e}")
     except KeyboardInterrupt:

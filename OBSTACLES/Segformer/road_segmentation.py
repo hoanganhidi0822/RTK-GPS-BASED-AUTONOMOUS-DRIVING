@@ -196,7 +196,7 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
     right_points = []
 
     
-    row = 240  # dùng một hàng duy nhất
+    row = 200  # dùng một hàng duy nhất
     if car_side == 'right':
         _, center, left, right = find_left_lane(labels, row)
     elif car_side == 'left':
@@ -218,7 +218,7 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
         x_coord = x_center
 
     error = x_coord - X_REF
-    angle = PID(error, p = 0.1, i = 0.0001, d = 0.001)
+    angle = PID(error, p = 0.08, i = 0.0001, d = 0.01)
 
     overlay = None
     if debug:
@@ -230,6 +230,6 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
         cv2.circle(overlay, (x_left, row), 5, (255, 0, 0), -1)      # Lề trái (xanh dương)
         cv2.circle(overlay, (x_right, row), 5, (0, 255, 255), -1)   # Lề phải (vàng)
 
-        
+    
 
     return round(angle), overlay, intersection 
