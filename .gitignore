@@ -5,7 +5,7 @@ FACE_DETECTION/model/*.onnx
 
 # Bỏ qua các file ảnh .png trong thư mục image*
 OBSTACLES/image*/*.png
-
+/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/create_data/Data
 # Bỏ qua tất cả các file .pt, .pth trên toàn bộ repo
 *.pt
 *.pth
