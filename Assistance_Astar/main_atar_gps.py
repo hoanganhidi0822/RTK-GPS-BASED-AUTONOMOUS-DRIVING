@@ -6,7 +6,7 @@ from queue import PriorityQueue
 import glob
 import os
 from math import radians, sin, cos, sqrt, atan2
-from Assistance_Astar.overlay import *
+# from Assistance_Astar.overlay import *
 from Assistance_Astar.location_finder  import *
 from RTK_GPS.GPS_module import *
 from main_seg import gps_ser

@@ -16,8 +16,8 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
-stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
 # gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -232,8 +232,8 @@ def main():
         # Update vehicle state using RTK GPS
         lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
         cf.rtk_status = rtk_status
-        cf.latitude = lat
-        cf.longitude = lon
+        cf.latitude   = lat
+        cf.longitude  = lon
         if x == None:
             continue
 
@@ -290,7 +290,7 @@ def main():
                 # stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                stm32(angle=steering_filtered, speed=0, brake_state=1)
+                stm32(angle=steering_filtered, speed=1, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obstacles = []
                 obs = [] 
@@ -535,7 +535,7 @@ def main():
             print("Goal reached!")
             play__ = destination_sound.play() 
             play__.wait_done()
-            stm32(angle=0, speed=0, brake_state=1) 
+            stm32(angle=steering_filtered, speed=0, brake_state=1) 
             return
         cf.seg_steer = steering_angle
         obstacles = []   

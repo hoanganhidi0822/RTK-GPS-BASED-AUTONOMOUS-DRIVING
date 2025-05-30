@@ -4,12 +4,12 @@ import glob
 import os
 
 # Đọc thông số camera
-camera_matrix = np.loadtxt('OBSTACLES/camera_param/camera_matrix.txt', dtype=np.float32)
-dist_coeffs = np.loadtxt('OBSTACLES/camera_param/distortion_coefficients.txt', dtype=np.float32)
+camera_matrix = np.loadtxt('/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/OBSTACLES/camera_param/camera_matrix.txt', dtype=np.float32)
+dist_coeffs = np.loadtxt('/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/OBSTACLES/camera_param/distortion_coefficients.txt', dtype=np.float32)
 
 # Đường dẫn thư mục ảnh gốc và ảnh đã hiệu chỉnh
 input_folder = 'captured_images/'
-output_folder = 'undistorted_images/'
+output_folder = 'undistorted/'
 
 # Tạo thư mục lưu ảnh nếu chưa tồn tại
 os.makedirs(output_folder, exist_ok=True)
