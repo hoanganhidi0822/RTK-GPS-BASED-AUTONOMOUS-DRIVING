@@ -274,26 +274,7 @@ def calc_global_paths(fplist, csp):
     #    + Độ cong c.
     return fplist
 
-# def check_collision(fp, ob):
-#     # fp:Một đối tượng thuộc lớp Frenet_path chứa thông tin quỹ đạo, bao gồm danh sách các điểm tọa độ toàn cục (x,y).
-#     # ob:Mảng NumPy ob chứa tọa độ của các chướng ngại vật: Mỗi hàng đại diện cho một chướng ngại vật với (x,y).
-    
-#     # Duyệt qua từng chướng ngại vật
-#     # Lặp qua tất cả các chướng ngại vật trong danh sách ob
-#     for i in range(len(ob[:, 0])):
-#         print(f"len fp.x: {(i)}")
-#         # Tính khoảng cách từ từng điểm trên quỹ đạo đến chướng ngại vật
-#         # Với mỗi chướng ngại vật ob[i]=(xob,yob), tính khoảng cách bình phương từ nó đến từng điểm (x,y) trên quỹ đạo fp:
-#         d = [((ix - ob[i, 0])**2 + (iy - ob[i, 1])**2)
-#              for (ix, iy) in zip(fp.x, fp.y)]
 
-#         # So sánh mỗi khoảng cách với bán kính va chạm
-#         collision = any([di <= ROBOT_RADIUS**2 for di in d])
-
-#         if collision:
-#             return False
-
-#     return True
 
 def check_collision(fp, ob):
     """

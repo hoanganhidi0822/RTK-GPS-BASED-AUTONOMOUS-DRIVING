@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
 from OBSTACLES.Segformer.road_segmentation import get_steering_angle 
-camera_index = 0
+camera_index = 2
 
 cf.det_image = np.zeros((480, 640, 3))
 cf.depth_image = np.zeros((480, 640, 3))
@@ -107,7 +107,7 @@ def process_depth():
 
 
     inv_K = np.linalg.inv(np.array([
-        [267,  0, 293],
+        [267,  0, 320],
         [0, 267, 245],
         [0, 0, 1]
     ]))
@@ -177,11 +177,11 @@ def process_depth():
                 center_x = (xmin + xmax) / 2
                 center_y = (ymin + ymax) / 2
 
-                intrinsic_matrix = np.array([
-                    [267,  0  , 293],
-                    [ 0 , 267 , 245],
-                    [ 0 ,  0  ,  1 ]
-                ])
+                # intrinsic_matrix = np.array([
+                #     [267,  0  , 293],
+                #     [ 0 , 267 , 245],
+                #     [ 0 ,  0  ,  1 ]
+                # ])
                 
                 """ 267.97  0.00    293.59
                     0.00    265.42  245.49
@@ -199,6 +199,8 @@ def process_depth():
                         persons.append((x_real, z_real))
                     elif class_id == 2 or class_id == 5 or class_id == 7:
                         obstacles.append((x_real, z_real))
+                        # obstacles.append((x_real, z_real + 1.0))
+                        
                     
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
                     # Hiển thị thông tin
