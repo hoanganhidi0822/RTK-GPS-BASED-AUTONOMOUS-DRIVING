@@ -8,8 +8,8 @@ echo "Adding changes..."
 git add .
 
 # Tạo commit với thời gian hiện tại
-COMMIT_MSG="update: $(date '+%Y-%m-%d %H:%M:%S')"
-# COMMIT_MSG="update map"
+# COMMIT_MSG="update: $(date '+%Y-%m-%d %H:%M:%S')"
+COMMIT_MSG="Simulation"
 echo "Commit with message: '$COMMIT_MSG'"
 git commit -m "$COMMIT_MSG"
 
