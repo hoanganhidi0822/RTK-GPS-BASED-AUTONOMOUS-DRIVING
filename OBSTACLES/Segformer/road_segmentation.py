@@ -187,7 +187,7 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
     image_resized = cv2.resize(image, IMAGE_SIZE)
     labels = predict(model, extractor, image_resized, DEVICE).cpu().numpy()
 
-    car_side = detect_car_position_from_mask(labels, car_class=2, row_start=120)
+    car_side = detect_car_position_from_mask(labels, car_class=2, row_start=190)
     intersection = is_intersection(labels, row=240, threshold=600, road_class=1)
     print(f"[LOG] car side: {car_side},Intersection:  {intersection}")
 
@@ -205,9 +205,9 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
         _, center, left, right = find_midpoint_segment(labels, row)
 
     # Tính toán các điểm x sau khi dịch offset
-    x_center = center + 25
-    x_left = np.clip(left[0] + 140, 0, labels.shape[1] - 1)
-    x_right = np.clip(right[0] - 80, 0, labels.shape[1] - 1)
+    x_center = center + 40
+    x_left = np.clip(left[0] + 110, 0, labels.shape[1] - 1)
+    x_right = np.clip(right[0] - 60, 0, labels.shape[1] - 1)
 
     # Lựa chọn x theo vị trí xe
     if car_side == 'right':
@@ -218,7 +218,7 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
         x_coord = x_center
 
     error = x_coord - X_REF
-    angle = PID(error, p = 0.08, i = 0.0001, d = 0.01)
+    angle = PID(error, p = 0.095, i = 0.0001, d = 0.01)
 
     overlay = None
     if debug:

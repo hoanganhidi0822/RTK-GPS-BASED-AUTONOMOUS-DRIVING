@@ -172,6 +172,9 @@ def process_depth():
                     continue
 
                 depth_value = np.median(depth_values_bbox)
+                # Bỏ qua nếu depth không hợp lệ (0 hoặc quá nhỏ)
+                if depth_value <= 1e-3:
+                    continue
                 DEPTH_SCALE_FACTOR = 1.25
                 z_camera = (65535 / depth_value) * DEPTH_SCALE_FACTOR
                 center_x = (xmin + xmax) / 2
@@ -194,7 +197,7 @@ def process_depth():
                 real_coords = rotation_matrix @ camera_coords
                 x_real, z_real = real_coords[0], real_coords[2]
                 
-                if z_real < 30 and abs(x_real) <= 4:
+                if z_real < 30 and abs(x_real) <= 8:
                     if class_id == 0:
                         persons.append((x_real, z_real))
                     elif class_id == 2 or class_id == 5 or class_id == 7:
@@ -204,7 +207,7 @@ def process_depth():
                     
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
                     # Hiển thị thông tin
-                    cv2.putText(raw_frame, f"X: {x_real:.2f} m", (int(xmin), int(ymax) + 15),
+                    cv2.putText(raw_frame, f"X: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         cf.obstacles = obstacles

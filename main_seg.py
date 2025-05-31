@@ -16,9 +16,9 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-# gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
-# #stm32 = #stm32(port="/dev/ttyUSB0", baudrate=115200)
-gps_ser = 1
+gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
+stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
+# gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
@@ -81,12 +81,12 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    # lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    lat, lon, car_heading, rtk_status, speed = 10.8531900250,106.7714968267,185, "RTK Fixed", 15
-    time.sleep(0.1)
-    # rtk_status = "Single"
+    # lat, lon, car_heading, rtk_status, speed = 10.8531900250,106.7714968267,185, "RTK Fixed", 15
+    # time.sleep(0.1)
+    rtk_status = "Single"
     
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -176,7 +176,7 @@ def main():
     rtk_bad_start = None
     rtk_resume_start = None
 
-    #stm32(angle=int(0), speed=int(0), brake_state=0)
+    stm32(angle=int(0), speed=int(0), brake_state=0)
 
     # Wait Assistance
     while cf.record:
@@ -288,10 +288,10 @@ def main():
             count_none += 1
             if count_none == 3:
                 pass
-                # #stm32(angle= int(-5), speed=0, brake_state=0)
+                # stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                #stm32(angle=steering_filtered, speed=1, brake_state=1)
+                stm32(angle=steering_filtered, speed=1, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obstacles = []
                 obs = [] 
@@ -349,7 +349,7 @@ def main():
 
             # Người vẫn còn sau 1.5 giây => dừng xe
             elif found_person and not stop_triggered and (current_time - person_detected_time) > 0.01:
-                #stm32(angle=int(steering_filtered), speed=int(1), brake_state=0)
+                stm32(angle=int(steering_filtered), speed=int(1), brake_state=0)
 
                 threading.Thread(target=lambda: collision_sound.play()).start()
                 speed_filtered = 1
@@ -488,7 +488,7 @@ def main():
 
             # Thời gian đệm trước khi dùng seg_steer (giây)
             seg_delay_cua = 6.0
-            seg_delay_thang = 0.2
+            seg_delay_thang = 1
 
             if should_stop:
                 target_speed = 1
@@ -519,7 +519,7 @@ def main():
 
             count += 1
             if count == 1:
-                #stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
+                stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
                 count = 0
 
         ####-----------------------------------------------------------------------------------------------------------#### 
@@ -528,11 +528,11 @@ def main():
         if np.isclose(x, tx[-1], atol = 2.5) and np.isclose(y, ty[-1], atol = 2.5):
             gps_speed = "Goal reached!"
             cf.camera_error = 1
-            #stm32(angle=0, speed=1, brake_state=1) 
+            stm32(angle=0, speed=1, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play() 
             play__.wait_done()
-            #stm32(angle=steering_filtered, speed=0, brake_state=1) 
+            stm32(angle=steering_filtered, speed=0, brake_state=1) 
             return
         cf.seg_steer = steering_angle
         obstacles = []   
