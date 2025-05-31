@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
 from OBSTACLES.Segformer.road_segmentation import get_steering_angle 
-camera_index = 2
+camera_index = 0
 
 cf.det_image = np.zeros((480, 640, 3))
 cf.depth_image = np.zeros((480, 640, 3))
@@ -76,7 +76,7 @@ def optimize_for_gpu(model):
     return model
 
 depth_anything = DepthAnythingV2(**model_configs[args.encoder])
-depth_anything.load_state_dict(torch.load(f'OBSTACLES/checkpoints/depth_anything_v2_{args.encoder}.pth', map_location='cpu'))
+depth_anything.load_state_dict(torch.load(f'OBSTACLES/checkpoints/depth_anything_v2_{args.encoder}.pth', map_location='cuda'))
 depth_anything = optimize_for_gpu(depth_anything).eval()
 
 cmap = matplotlib.colormaps.get_cmap('Spectral_r')
@@ -105,14 +105,22 @@ def process_depth():
         cf.camera_error = 1
         return
 
+
+    inv_K = np.linalg.inv(np.array([
+        [267,  0, 293],
+        [0, 267, 245],
+        [0, 0, 1]
+    ]))
+
     global obstacles
     global persons
     fps = 0
     i = 0
-    count_frame = 1
+    count_frame = 2
     results = []
+    time_start = 0
     while 1:
-        time_start = time.time()
+        
         ret, raw_frame = cap.read()
         if not ret:
             print("Error: Lost connection to camera")
@@ -139,7 +147,8 @@ def process_depth():
             # print(f"[INFO] Steering angle: {angle:.2f} degrees")
 
         # Infer depth
-        elif cf.seg_mode == 0 and count_frame % 2 == 0:
+        elif cf.seg_mode == 0 and count_frame % 3 == 0:
+            time_start = time.time()
             with torch.no_grad(), torch.amp.autocast('cuda'):  
                 results = model(raw_frame, verbose=False, device=device,classes=[0, 1, 2,3,4,7])
                 depth_map = depth_anything.infer_image(raw_frame, args.input_size)
@@ -155,6 +164,9 @@ def process_depth():
                 if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
                     continue
                 xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
+                if xmax - xmin < 10 or ymax - ymin < 10:
+                    continue  # skip small boxes
+
                 depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
                 if depth_values_bbox.size == 0:
                     continue
@@ -176,7 +188,7 @@ def process_depth():
                     0.00    0.00     1.00"""
 
                 pixel_coords = np.array([center_x, center_y, 1])
-                camera_coords = np.linalg.inv(intrinsic_matrix) @ (pixel_coords * z_camera)
+                camera_coords = inv_K @ (pixel_coords * z_camera)
 
                 rotation_matrix = R.from_euler('x', 0, degrees=True).as_matrix()
                 real_coords = rotation_matrix @ camera_coords
@@ -214,4 +226,5 @@ def process_depth():
 
         if len(fps_window) == fps_window.maxlen:
             avg_fps = sum(fps_window) / len(fps_window)
-            # print(f" --- [INFO] Perception FPS: {avg_fps:.2f}")
+            if count_frame %10  == 0:
+                print(f" --- [INFO] Perception FPS: {avg_fps:.2f}")

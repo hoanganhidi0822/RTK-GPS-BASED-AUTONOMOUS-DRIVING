@@ -14,12 +14,10 @@ cf.cf_destination = "none"
 def task1():
     asyncio.set_event_loop(asyncio.new_event_loop())
     car_assistance = islab_assistance_v2.virtual_assistance()
-    while True:
-        is_run = car_assistance.run()
-        print(is_run)
-        if is_run:
-            break
-    event.set()  # Bật event để Task 2 chạy
+    
+    is_run = car_assistance.run()
+    if is_run:
+        event.set()  # Bật event để Task 2 chạy
 
 def task2(destination = 0):
 

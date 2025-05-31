@@ -574,7 +574,7 @@ def remove_duplicate_waypoints(file_path):
 
 def run_map(name):
     # Example usage 
-    simulation = 0
+    simulation = 1
     if simulation != 1:
         lat, lon, _,_,car_heading, sat_count = get_gps_data(gps_ser)
         
@@ -593,7 +593,7 @@ def run_map(name):
         current_position = (lat, lon)
         # current_position = (10.8532734317,106.7715069650)
     else:
-        current_position = (10.8535405900,106.7715386783) # Khu C
+        current_position = (10.8531900250,106.7714968267) # Khu C
 
     finder = LocationFinder()
     target_node = finder.get_key(name)

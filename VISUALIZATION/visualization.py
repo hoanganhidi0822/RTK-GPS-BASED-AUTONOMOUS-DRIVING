@@ -106,22 +106,17 @@ def plot_car(x, y, yaw, ax, icon_path="VISUALIZATION/icon/car.png", zoom=0.12):
 
 class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None):
-        self.fig = plt.figure(figsize=(30, 10))  # Tăng kích thước figure
+        self.fig = plt.figure(figsize=(30, 10))
         self.ax = self.fig.add_subplot(111)
-
         super().__init__(self.fig)
         self.setParent(parent)
-        
-        # Mở rộng plot để hiển thị toàn màn hình
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.updateGeometry()
 
-        # Cài đặt trục ban đầu
         self.ax.set_xlim(-5, 5)
         self.ax.set_ylim(-5, 25)
-        self.ax.set_facecolor('black')  # Nền màu đen
+        self.ax.set_facecolor('black')
 
-        # Dữ liệu xe và vật cản
         self.vehicle_pos = (0, 0)
         self.vehicle_yaw = np.deg2rad(90)
         self.filtered_inv_yaw = np.deg2rad(90)
@@ -132,18 +127,46 @@ class PlotCanvas(FigureCanvas):
         self.ty = []
         self.tyaw = []
 
-        # Timer cập nhật mỗi 10ms
+        self.left_x = []
+        self.left_y = []
+        self.mid_x = []
+        self.mid_y = []
+        self.right_x = []
+        self.right_y = []
+
+        self.path_lines = []
+        self.obstacle_artists = []
+
+        self.obstacle_icon = mpimg.imread("VISUALIZATION/icon/obstacle.png")
+        self.obstacle_img_raw = OffsetImage(self.obstacle_icon, zoom=0.15)
+        self.vehicle_icon = mpimg.imread("VISUALIZATION/icon/car.png")
+        self.vehicle_icon = rotate(self.vehicle_icon, -90, reshape=True) 
+        self.vehicle_img = OffsetImage(self.vehicle_icon, zoom=0.15)
+        self.vehicle_box = AnnotationBbox(
+            self.vehicle_img,
+            (0.5, 0.1),
+            xycoords='axes fraction',
+            frameon=False,
+            zorder=100
+        )
+        self.ax.add_artist(self.vehicle_box)
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(20)
+        self.timer.start(200)
 
     def update_plot(self):
-        self.ax.clear()
+        for line in self.path_lines:
+            line.remove()
+        self.path_lines.clear()
+
+        for artist in self.obstacle_artists:
+            artist.remove()
+        self.obstacle_artists.clear()
+
         self.ax.set_xlim(self.vehicle_pos[0] - 5, self.vehicle_pos[0] + 5)
         self.ax.set_ylim(self.vehicle_pos[1] - 5, self.vehicle_pos[1] + 25)
         self.ax.set_facecolor('black')
-
-        # Ẩn số và viền trục
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.ax.set_xticklabels([])
@@ -153,139 +176,70 @@ class PlotCanvas(FigureCanvas):
         self.ax.spines['left'].set_visible(False)
         self.ax.spines['bottom'].set_visible(False)
 
-        def perspective_transform(x, y, center_x, center_y, scale_y=0.5, tilt_x=0.2):
-            """Biến đổi tọa độ để giả lập góc nhìn xiên từ phía sau xe"""
-            # Dịch sang gốc toạ độ
-            dx = x - center_x
-            dy = y - center_y
-
-            # Thu hẹp chiều ngang theo độ cao (hiệu ứng phối cảnh)
-            perspective_scale = 1 - scale_y * (dy / 30)  # càng xa thì càng nhỏ
-            x_persp = dx * perspective_scale
-            y_persp = dy - tilt_x * dx  # nghiêng trục y theo x
-
-            # Dịch lại về tọa độ gốc
-            return x_persp + center_x, y_persp + center_y
-
-
-        # Hàm xoay điểm quanh gốc tọa độ theo góc theta
-        def rotate(x, y, theta):
-            R = np.array([[np.cos(theta), -np.sin(theta)],
-                        [np.sin(theta),  np.cos(theta)]])
-            return np.dot(R, np.array([x, y]))
-
-        # Vì xe được giữ cố định nên ta xoay các phần khác theo -vehicle_yaw 
-        # (tức xoay ngược lại góc của xe)
-        alpha = 0.2  # Hệ số làm mượt, giá trị nhỏ giúp làm mượt hơn nhưng phản hồi chậm hơn
-        self.filtered_inv_yaw = alpha * (np.deg2rad(90) - self.vehicle_yaw) + (1 - alpha) * self.filtered_inv_yaw
-        inv_yaw = self.filtered_inv_yaw
-
-        # Hàm hỗ trợ biến đổi vector (dạng mảng) theo xoay
         def rotate_array(x_arr, y_arr, theta):
-            """
-            Rotate arrays of x and y coordinates around the vehicle position by a given angle.
-
-            Parameters
-            ----------
-            x_arr : array-like
-                Array of x coordinates
-            y_arr : array-like
-                Array of y coordinates
-            theta : float
-                Angle of rotation in radians
-
-            Returns
-            -------
-            x_rot : array-like
-                Rotated array of x coordinates
-            y_rot : array-like
-                Rotated array of y coordinates
-            """
             x_arr = np.array(x_arr)
             y_arr = np.array(y_arr)
             x_rot = (x_arr - self.vehicle_pos[0]) * np.cos(theta) - (y_arr - self.vehicle_pos[1]) * np.sin(theta)
             y_rot = (x_arr - self.vehicle_pos[0]) * np.sin(theta) + (y_arr - self.vehicle_pos[1]) * np.cos(theta)
             return x_rot + self.vehicle_pos[0], y_rot + self.vehicle_pos[1]
 
-        # Vẽ đường đi chính: xoay các điểm theo inv_yaw
-        tx_rot, ty_rot = rotate_array(self.tx, self.ty, inv_yaw)
-        
-        self.ax.plot(tx_rot[1:], ty_rot[1:], "white", linewidth=0.5)
+        alpha = 0.2
+        self.filtered_inv_yaw = alpha * (np.deg2rad(90) - self.vehicle_yaw) + (1 - alpha) * self.filtered_inv_yaw
+        inv_yaw = self.filtered_inv_yaw
 
-        # Nếu tyaw chưa là numpy array, chuyển đổi nó
+        tx_rot, ty_rot = rotate_array(self.tx, self.ty, inv_yaw)
+        self.path_lines.append(self.ax.plot(tx_rot[1:], ty_rot[1:], "white", linewidth=0.5)[0])
+
         if not isinstance(self.tyaw, np.ndarray):
             self.tyaw = np.array(self.tyaw)
 
-        # Tính đường ranh giới ban đầu (chưa xoay)
-        MAX_ROAD_WIDTH = 6.0
-        left_x  = self.tx + (MAX_ROAD_WIDTH * 0.75 + 0.5) * np.cos(self.tyaw + np.pi / 2)
-        left_y  = self.ty + (MAX_ROAD_WIDTH * 0.75 + 0.5) * np.sin(self.tyaw + np.pi / 2)
-        mid_x   = self.tx + (MAX_ROAD_WIDTH * 0.25)       * np.cos(self.tyaw + np.pi / 2)
-        mid_y   = self.ty + (MAX_ROAD_WIDTH * 0.25)       * np.sin(self.tyaw + np.pi / 2)
-        right_x = self.tx + (MAX_ROAD_WIDTH / 4 + 0.5)    * np.cos(self.tyaw - np.pi / 2)
-        right_y = self.ty + (MAX_ROAD_WIDTH / 4 + 0.5)    * np.sin(self.tyaw - np.pi / 2)
+        if len(self.left_x) != len(self.tx):
+            MAX_ROAD_WIDTH = 6.0
+            self.left_x  = self.tx + (MAX_ROAD_WIDTH * 0.75 + 0.5) * np.cos(self.tyaw + np.pi / 2)
+            self.left_y  = self.ty + (MAX_ROAD_WIDTH * 0.75 + 0.5) * np.sin(self.tyaw + np.pi / 2)
+            self.mid_x   = self.tx + (MAX_ROAD_WIDTH * 0.25)       * np.cos(self.tyaw + np.pi / 2)
+            self.mid_y   = self.ty + (MAX_ROAD_WIDTH * 0.25)       * np.sin(self.tyaw + np.pi / 2)
+            self.right_x = self.tx + (MAX_ROAD_WIDTH / 4 + 0.5)    * np.cos(self.tyaw - np.pi / 2)
+            self.right_y = self.ty + (MAX_ROAD_WIDTH / 4 + 0.5)    * np.sin(self.tyaw - np.pi / 2)
 
-        # Xoay các đường ranh giới theo inv_yaw
-        left_x_rot, left_y_rot   = rotate_array(left_x, left_y, inv_yaw)
-        mid_x_rot, mid_y_rot     = rotate_array(mid_x, mid_y, inv_yaw)
-        right_x_rot, right_y_rot = rotate_array(right_x, right_y, inv_yaw)
+        left_x_rot, left_y_rot   = rotate_array(self.left_x, self.left_y, inv_yaw)
+        mid_x_rot, mid_y_rot     = rotate_array(self.mid_x, self.mid_y, inv_yaw)
+        right_x_rot, right_y_rot = rotate_array(self.right_x, self.right_y, inv_yaw)
 
-        self.ax.plot(mid_x_rot,   mid_y_rot, "--y", linewidth=3)
-        self.ax.plot(left_x_rot,  left_y_rot, "whitesmoke", linewidth=2)
-        self.ax.plot(right_x_rot, right_y_rot, "whitesmoke", linewidth=2)
+        self.path_lines.append(self.ax.plot(mid_x_rot, mid_y_rot, "--y", linewidth=3)[0])
+        self.path_lines.append(self.ax.plot(left_x_rot, left_y_rot, "whitesmoke", linewidth=2)[0])
+        self.path_lines.append(self.ax.plot(right_x_rot, right_y_rot, "whitesmoke", linewidth=2)[0])
 
-        # Vẽ các đường đi khả dĩ (paths) nếu có
         if self.paths:
             max_len = max(len(traj.x) for traj in self.paths if traj.x)
             all_x = [traj.x + [np.nan] * (max_len - len(traj.x)) for traj in self.paths]
             all_y = [traj.y + [np.nan] * (max_len - len(traj.y)) for traj in self.paths]
             all_x = np.array(all_x)
             all_y = np.array(all_y)
-            # Xoay từng cột (từng điểm) theo inv_yaw
             for i in range(all_x.shape[0]):
                 x_rot, y_rot = rotate_array(all_x[i, :], all_y[i, :], inv_yaw)
-                self.ax.plot(x_rot, y_rot, "white", alpha=0.4, linewidth=0.5)
+                self.path_lines.append(self.ax.plot(x_rot, y_rot, "white", alpha=0.4, linewidth=0.5)[0])
 
-            # Vẽ optimal path (đường đi tối ưu) sau khi xoay
             optimal_x, optimal_y = rotate_array(self.optimal_path.x, self.optimal_path.y, inv_yaw)
-            self.ax.plot(optimal_x[1:], optimal_y[1:], "deepskyblue", alpha=0.9, linewidth=25)
-
-        plot_car(self.vehicle_pos[0], self.vehicle_pos[1], yaw=np.deg2rad(90), ax=self.ax)
-
-        # Tải ảnh xe biểu tượng vật cản (chỉ cần load 1 lần)
-        if not hasattr(self, "obstacle_icon"):
-            self.obstacle_icon = mpimg.imread("VISUALIZATION/icon/obstacle.png")
-            self.obstacle_img_raw = OffsetImage(self.obstacle_icon, zoom=0.15)
-
-        # Trong vòng lặp obstacles
+            self.path_lines.append(self.ax.plot(optimal_x[1:], optimal_y[1:], "deepskyblue", alpha=0.9, linewidth=25)[0])
 
         for obs in self.obstacles:
-            print(obs[0])
-            
             dx = obs[0] - self.vehicle_pos[0]
             dy = obs[1] - self.vehicle_pos[1]
             if not (-5 <= dx <= 5) or not (-25 <= dy <= 25):
                 continue
-            x_rot, y_rot = rotate(dx, dy, self.filtered_inv_yaw)
-
-            x_plot = x_rot + self.vehicle_pos[0]
-            y_plot = y_rot + self.vehicle_pos[1] + 1
-
-            # Tạo transform để xoay quanh tâm ảnh (theo yaw)
+            x_rot, y_rot = rotate_array([dx], [dy], self.filtered_inv_yaw)
+            x_plot = x_rot[0] + self.vehicle_pos[0]
+            y_plot = y_rot[0] + self.vehicle_pos[1] + 1
             trans_data = Affine2D().rotate_around(x_plot, y_plot, self.filtered_inv_yaw) + self.ax.transData
-
-            # Tạo phiên bản OffsetImage có transform riêng
             obstacle_img_rotated = OffsetImage(self.obstacle_icon, zoom=0.15)
             ab = AnnotationBbox(obstacle_img_rotated, (x_plot, y_plot), frameon=False)
-            ab.set_transform(trans_data)  # Gán transform đã xoay
-
+            ab.set_transform(trans_data)
             self.ax.add_artist(ab)
+            self.obstacle_artists.append(ab)
 
-        # Cập nhật giới hạn trục (đảm bảo không đổi)
         self.ax.set_xlim(self.vehicle_pos[0] - 6, self.vehicle_pos[0] + 6)
         self.ax.set_ylim(self.vehicle_pos[1] - 5, self.vehicle_pos[1] + 30)
-
-        # Cập nhật figure
         self.fig.tight_layout()
         self.ax.figure.canvas.draw_idle()
 
@@ -294,7 +248,7 @@ class PlotCanvas(FigureCanvas):
         self.vehicle_yaw = yaw
         self.paths = cf.paths
         self.tx = cf.tx
-        self.ty = cf.ty 
+        self.ty = cf.ty
         self.tyaw = cf.tyaw
         self.optimal_path = cf.optimal_path
 
@@ -447,7 +401,7 @@ class ListeningDialog(QDialog):
 
         # Animation state
         self.base_radius = 100
-        self.pulse_amplitude = 20  # Biên độ co giãn
+        self.pulse_amplitude = 10  # Biên độ co giãn
         self.angle = 0  # Góc dùng cho sin
 
         # Timer update animation mượt hơn (~60 FPS)
@@ -610,9 +564,9 @@ class MapDisplayFrame(QFrame):
     def init_face_detection(self):
         mydict = ['Thay Giang', 'Thay Ha', 'Thay Hai', 'Thay Thanh', 'Hoang Anh', 'Quoc Kha']  # Ví dụ thêm tên
         self.face_detector = FaceRecognition(
-            face_detection_model='/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/FACE_DETECTION/model1/face_detection_yunet_2023mar.onnx',
-            face_recognition_model='/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/FACE_DETECTION/model1/face_recognition_sface_2021dec.onnx',
-            svc_path='/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/FACE_DETECTION/model1/svc_model.pkl',
+            face_detection_model  ='FACE_DETECTION/model1/face_detection_yunet_2023mar.onnx',
+            face_recognition_model='FACE_DETECTION/model1/face_recognition_sface_2021dec.onnx',
+            svc_path              ='FACE_DETECTION/model1/svc_model.pkl',
             mydict=mydict
         )
 
@@ -630,7 +584,7 @@ class MapDisplayFrame(QFrame):
         # Bắt đầu phát hiện khuôn mặt
         self.face_timer = QTimer(self)
         self.face_timer.timeout.connect(self.process_face_detection)
-        self.face_timer.start(50)  # 20 fps
+        self.face_timer.start(200)  # 20 fps
 
     def process_face_detection(self):
         if not self.cap.isOpened() or self.face_detect_triggered:
@@ -652,10 +606,10 @@ class MapDisplayFrame(QFrame):
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
                 names_detected.append(name)
 
-            if self.face_detect_frame_count >= 12 and not self.face_detect_triggered:
+            if self.face_detect_frame_count >= 20 and not self.face_detect_triggered:
                 self.face_detect_triggered = True
                 self.face_timer.stop()
-                self.camera_timer.start(20) 
+                self.camera_timer.start(100) 
                 self.stacked_layout.setCurrentWidget(self.main_widget)
                 self.show_main_view()
 
@@ -694,7 +648,7 @@ class MapDisplayFrame(QFrame):
             elif name == "Thay Ha":
                 file_path = "VISUALIZATION/voice/myha.mp3"
             else:
-                file_path = "/mnt/NewVolume/Documents/Researches/2024_Project/RTK_GPS/Waypoint-Tracking/Pure-pursuit/frenet-optimal-trajectory/test/output.mp3"  # Âm thanh chung
+                file_path = "test/output.mp3"  # Âm thanh chung
 
             sound = AudioSegment.from_mp3(file_path)
             sound = sound.apply_gain(6) 
@@ -801,7 +755,7 @@ class AutonomousCarUI(QWidget):
         # Tạo QTimer để cập nhật dữ liệu liên tục
         self.data_timer = QTimer()
         self.data_timer.timeout.connect(self.update_data)
-        self.data_timer.start(10)
+        self.data_timer.start(200)
 
     def show_listening(self):
         # Hiển thị dialog NGAY LẬP TỨC
@@ -847,19 +801,14 @@ class AutonomousCarUI(QWidget):
     def update_data(self):
 
         ob =cf.ob
-        x = cf.x
-        y = cf.y
+        x  = cf.x
+        y  = cf.y
         yaw = cf.yaw
-        self.tx = cf.tx
-        self.ty = cf.ty 
+        self.tx   = cf.tx
+        self.ty   = cf.ty 
         self.tyaw = cf.tyaw
         
         self.vehicle_display.plot_canvas.update_vehicle_position(x, y, yaw)
         self.vehicle_display.plot_canvas.update_obstacles(ob)
 
-# if __name__ == "__main__":
 
-#     app = QApplication(sys.argv)
-#     window = AutonomousCarUI()
-#     window.show()
-#     sys.exit(app.exec_())

@@ -16,9 +16,9 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
-# gps_ser = 1
+# gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
+# #stm32 = #stm32(port="/dev/ttyUSB0", baudrate=115200)
+gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
@@ -81,11 +81,11 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
+    # lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
 
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    # lat, lon, car_heading, rtk_status, speed = 10.8535405900,106.7715386783,185, "Float", 15
-    # time.sleep(0.1)
+    lat, lon, car_heading, rtk_status, speed = 10.8531900250,106.7714968267,185, "RTK Fixed", 15
+    time.sleep(0.1)
     # rtk_status = "Single"
     
     # -------- Convert data to X Y frame --------- #
@@ -176,7 +176,7 @@ def main():
     rtk_bad_start = None
     rtk_resume_start = None
 
-    stm32(angle=int(0), speed=int(0), brake_state=0)
+    #stm32(angle=int(0), speed=int(0), brake_state=0)
 
     # Wait Assistance
     while cf.record:
@@ -217,7 +217,7 @@ def main():
     alpha_speed = 0.96
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
-    alpha_steering = 0.82   # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
+    alpha_steering = 0.7  # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
     prev_gps_time = 0
     max_delta_speed =0
     send_zero_speed = False
@@ -226,9 +226,10 @@ def main():
     turn_type = 'straight'
     still_turning = False
     is_intersection = 0
+    log_count = 0
     # --- Main Loop --- #
     while True:
-        
+        log_count += 1
         # Update vehicle state using RTK GPS
         lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
         cf.rtk_status = rtk_status
@@ -287,10 +288,10 @@ def main():
             count_none += 1
             if count_none == 3:
                 pass
-                # stm32(angle= int(-5), speed=0, brake_state=0)
+                # #stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                stm32(angle=steering_filtered, speed=1, brake_state=1)
+                #stm32(angle=steering_filtered, speed=1, brake_state=1)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obstacles = []
                 obs = [] 
@@ -348,9 +349,9 @@ def main():
 
             # Người vẫn còn sau 1.5 giây => dừng xe
             elif found_person and not stop_triggered and (current_time - person_detected_time) > 0.01:
-                stm32(angle=int(steering_filtered), speed=int(1), brake_state=0)
-                play_ = collision_sound.play()
-                play_.wait_done()
+                #stm32(angle=int(steering_filtered), speed=int(1), brake_state=0)
+
+                threading.Thread(target=lambda: collision_sound.play()).start()
                 speed_filtered = 1
                 target_speed = 1
                 stop_triggered = True
@@ -430,7 +431,7 @@ def main():
 
             # 2. Phát hiện người trong vùng nguy hiểm (đã được xử lý ở phần trước)
             if stop_triggered:
-                gps_speed = "SAFE MODE ACTIVATED – A person has been detected in the path. Please monitor the vehicle!"
+                gps_speed = "SAFE MODE ACTIVATED – A person has been detected. Please monitor the vehicle!"
                 print("[INFO] Người trong vùng nguy hiểm – Đang dừng xe.")
                 should_stop = True
 
@@ -474,24 +475,20 @@ def main():
             # Ghi lại thời gian bắt đầu chế độ segmentation
             if seg_mode and seg_mode_start_time is None:
                 seg_mode_start_time = current_time
-                speed_filtered = 5
+                speed_filtered = 6
    
             is_intersection = cf.is_intersection
-            
-            turn_type = classify_turn(steering_angle,threshold=7)
                 
             # Cập nhật trạng thái còn đang rẽ
-            if turn_type in ["left", "right"] and abs(steering_angle) > 7 or is_intersection:
+            if is_intersection:
                 still_turning = True
             else:  # thêm độ trễ khi thoát cua
                 still_turning = False
 
-            # Xác định có đang rẽ không
-            is_turning = curvature > 0.07 or turn_type in ["left", "right"]
 
             # Thời gian đệm trước khi dùng seg_steer (giây)
             seg_delay_cua = 6.0
-            seg_delay_thang = 1.0
+            seg_delay_thang = 0.2
 
             if should_stop:
                 target_speed = 1
@@ -500,9 +497,9 @@ def main():
 
             elif seg_mode:
                 delay = seg_delay_cua if still_turning else seg_delay_thang
-                alpha_steering = 0.8 if still_turning else 0.5
+                alpha_steering = 0.8 if still_turning else 0.6
 
-                if current_time - seg_mode_start_time < delay  or still_turning or is_intersection:
+                if current_time - seg_mode_start_time < delay  or still_turning:
                     steering_angle = car_steer   
                 else:
                     steering_angle = cf.seg_steer
@@ -512,7 +509,7 @@ def main():
             else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
                 steering_angle = car_steer
-                alpha_steering = 0.8
+                alpha_steering = 0.7
 
             # Low-pass filter: steering
             steering_filtered = alpha_steering * steering_filtered + (1 - alpha_steering) * steering_angle
@@ -522,7 +519,7 @@ def main():
 
             count += 1
             if count == 1:
-                stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
+                #stm32(angle=int(steering_filtered), speed=int(speed_filtered), brake_state=0)
                 count = 0
 
         ####-----------------------------------------------------------------------------------------------------------#### 
@@ -531,11 +528,11 @@ def main():
         if np.isclose(x, tx[-1], atol = 2.5) and np.isclose(y, ty[-1], atol = 2.5):
             gps_speed = "Goal reached!"
             cf.camera_error = 1
-            stm32(angle=0, speed=1, brake_state=1) 
+            #stm32(angle=0, speed=1, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play() 
             play__.wait_done()
-            stm32(angle=steering_filtered, speed=0, brake_state=1) 
+            #stm32(angle=steering_filtered, speed=0, brake_state=1) 
             return
         cf.seg_steer = steering_angle
         obstacles = []   
@@ -549,8 +546,9 @@ def main():
         time_start = time.time()
 
         ############# DEBUG #########################################################
-        print(f"\r[INFO] Dir: {turn_type}, Steer: {car_steer} Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)}", end=" ")
-      
+        if log_count == 10:
+            print(f"\r[INFO] Dir: {turn_type}, Steer: {car_steer} Seg Mode: {seg_mode}, Seg Steer: {cf.seg_steer},GPS Speed: {gps_speed},Target Speed: {round(speed_filtered)} FPS: {fps}", end=" ")
+            log_count = 0
         ############--- VISUALIZATION ---############################################
         # right before your update_vis() call:
         if isinstance(gps_speed, (int, float)):

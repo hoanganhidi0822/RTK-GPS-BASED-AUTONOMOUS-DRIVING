@@ -29,6 +29,7 @@ class virtual_assistance:
         print("Bắt đầu trợ lý ảo.")
 
     def get_record(self):
+        
         CHANNELS = 1
         RATE = 16000
         DURATION_LIMIT = 4
@@ -97,19 +98,18 @@ class virtual_assistance:
             return "khu_c"
         if any(k in text_lower for k in ["khu d", "khu dê", "đê"]):
             return "khu_d"
+        if any(k in text_lower for k in ["việt đức", "việt đứt", "tòa nhà đức", "đứt", "đức","trung tâm việt đức"]):
+            return "viet_duc"
         if any(k in text_lower for k in ["trung tâm", "tòa nhà chính", "nhà trung tâm"]):
             return "trung_tam_truoc"
-        if any(k in text_lower for k in ["việt đức", "việt đứt", "tòa nhà đức", "đứt", "đức"]):
-            return "viet_duc"
         if any(k in text_lower for k in ["xưởng gỗ", "xưởng mộc", "chỗ làm gỗ"]):
             return "go"
         return None
 
     def understanding_record(self,user_text): 
-
         if not user_text:
             print("Không nhận diện được văn bản.")
-            return "Tôi có thể đến các khu c, khu d, cổng trường, tòa nhà trung tâm, tòa việt đức, xưởng gỗ."
+            return "Xin lỗi, tôi chưa rõ yêu cầu của bạn. Tôi có thể đưa bạn đến Khu C, Khu D, Tòa nhà Trung tâm, Tòa Việt Đức hoặc Xưởng Gỗ. Bạn có thể nói lại điểm muốn đến được không?"
 
         print("Văn bản nhận được:", user_text)
 
@@ -218,11 +218,10 @@ class virtual_assistance:
 def run_assistance():
     islab_assistance = virtual_assistance()
 
-    while True:
-        is_run = islab_assistance.run()
-        print(is_run)
-        if is_run:
-            break
+    
+    is_run = islab_assistance.run()
+    print(is_run)
+    
 
 if __name__ == "__main__":
     run_assistance()

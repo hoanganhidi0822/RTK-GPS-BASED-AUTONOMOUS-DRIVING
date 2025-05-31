@@ -22,5 +22,5 @@ sudo  v4l2-ctl -d $DEVICE -c white_balance_automatic=0
 sudo  v4l2-ctl -d $DEVICE -c white_balance_temperature=6000
 
 # Tùy chỉnh thêm nếu cần
-sudo  v4l2-ctl -d $DEVICE -c brightness=10
+sudo  v4l2-ctl -d $DEVICE -c brightness=5
 sudo  v4l2-ctl -d $DEVICE -c saturation=65
