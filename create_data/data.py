@@ -17,7 +17,7 @@ if not cap.isOpened():
     exit()
 
 frame_count = 0
-image_count = 0
+image_count = 875
 
 print("Đang đọc từ camera. Nhấn 'q' để thoát.")
 

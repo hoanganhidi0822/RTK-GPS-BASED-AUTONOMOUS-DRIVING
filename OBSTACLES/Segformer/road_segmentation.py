@@ -206,8 +206,8 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
 
     # Tính toán các điểm x sau khi dịch offset
     x_center = center + 40
-    x_left = np.clip(left[0] + 110, 0, labels.shape[1] - 1)
-    x_right = np.clip(right[0] - 60, 0, labels.shape[1] - 1)
+    x_left = np.clip(left[0] + 105, 0, labels.shape[1] - 1)
+    x_right = np.clip(right[0] - 40, 0, labels.shape[1] - 1)
 
     # Lựa chọn x theo vị trí xe
     if car_side == 'right':
@@ -218,7 +218,7 @@ def get_steering_angle(image: np.ndarray, p=0.05, i=0.0000, d=0.01, debug: bool 
         x_coord = x_center
 
     error = x_coord - X_REF
-    angle = PID(error, p = 0.095, i = 0.0001, d = 0.01)
+    angle = PID(error, p = 0.1, i = 0.0001, d = 0.013)
 
     overlay = None
     if debug:

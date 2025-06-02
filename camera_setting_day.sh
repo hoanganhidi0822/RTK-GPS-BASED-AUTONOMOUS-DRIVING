@@ -9,7 +9,7 @@ sudo v4l2-ctl -d $DEVICE -c exposure_time_absolute=10
 sudo v4l2-ctl -d $DEVICE -c exposure_dynamic_framerate=0
 
 # Tăng contrast để chống chói nhẹ
-sudo  v4l2-ctl -d $DEVICE -c contrast=25
+sudo  v4l2-ctl -d $DEVICE -c contrast=20
 
 # 🔻 Giảm gamma (tăng độ tương phản tổng thể, giảm cháy)
 sudo v4l2-ctl -d $DEVICE -c gamma=80
@@ -22,5 +22,5 @@ sudo  v4l2-ctl -d $DEVICE -c white_balance_automatic=0
 sudo  v4l2-ctl -d $DEVICE -c white_balance_temperature=6000
 
 # Tùy chỉnh thêm nếu cần
-sudo  v4l2-ctl -d $DEVICE -c brightness=5
+sudo  v4l2-ctl -d $DEVICE -c brightness=0
 sudo  v4l2-ctl -d $DEVICE -c saturation=65

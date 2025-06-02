@@ -9,7 +9,7 @@ dist_coeffs = np.loadtxt('/mnt/NewVolume/Documents/Researches/2024_Project/RTK_G
 
 # Đường dẫn thư mục ảnh gốc và ảnh đã hiệu chỉnh
 input_folder = 'captured_images/'
-output_folder = 'undistorted/'
+output_folder = 'undistorted_data/'
 
 # Tạo thư mục lưu ảnh nếu chưa tồn tại
 os.makedirs(output_folder, exist_ok=True)

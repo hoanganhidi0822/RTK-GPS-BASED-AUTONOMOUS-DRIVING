@@ -811,4 +811,3 @@ class AutonomousCarUI(QWidget):
         self.vehicle_display.plot_canvas.update_vehicle_position(x, y, yaw)
         self.vehicle_display.plot_canvas.update_obstacles(ob)
 
-

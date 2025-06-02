@@ -16,8 +16,8 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB1", 115200)
-stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
+gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
+stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
 # gps_ser = 1
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
@@ -82,11 +82,11 @@ def update_state(ser):
    
     # ------------- GPS ------------- #
     lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
-
+    # rtk_status = "Single"
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
     # lat, lon, car_heading, rtk_status, speed = 10.8531900250,106.7714968267,185, "RTK Fixed", 15
     # time.sleep(0.1)
-    rtk_status = "Single"
+    
     
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -129,6 +129,12 @@ def classify_turn(angle, threshold=7):
     else:
         return "straight"
 
+# Ngưỡng vùng an toàn phía trước xe
+SAFETY_ZONE_X = 3 
+SAFETY_ZONE_Z = 5.0  
+
+def is_in_safety_zone(x, z):
+    return abs(x) <= SAFETY_ZONE_X and 0 <= z <= SAFETY_ZONE_Z
 
 def main():
     print(__file__ + " start!!")
@@ -214,7 +220,7 @@ def main():
     count_none = 0
     target_speed = 9
     speed_filtered = 1
-    alpha_speed = 0.96
+    alpha_speed = 0.93
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
     alpha_steering = 0.7  # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
@@ -331,7 +337,7 @@ def main():
 
             found_person = False
             for person in persons:
-                if abs(person[0]) < danger_zone and abs(person[1]) < 8.0:
+                if abs(person[0]) < danger_zone and abs(person[1]) < 4.0:
                     found_person = True
                     break
 
@@ -340,6 +346,7 @@ def main():
             # Phát hiện người lần đầu
             if found_person and person_detected_time is None:
                 person_detected_time = current_time
+
 
             # Không còn người trong vùng nguy hiểm
             elif not found_person:
@@ -358,9 +365,11 @@ def main():
                 print("\n[ALERT] Người xuất hiện liên tục trong 0.1s – Dừng xe!")
 
             # Nếu người đã rời đi và đủ thời gian (3 giây) thì cho xe chạy lại
-            if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 3.0:
+            if stop_triggered and resume_timer is not None and (current_time - resume_timer) >= 1.5:
                 stop_triggered = False
                 resume_timer = None
+                speed_filtered = 4
+                target_speed = 4
                 print("\n[INFO] Vùng an toàn. Cho xe chạy lại.")
 
             if 'prev_gps_speed' not in globals():
@@ -407,8 +416,12 @@ def main():
             if distance_to_goal < 8:
                 target_speed = min(target_speed, slow_down_speed(distance_to_goal, 8))
 
+
+            hazard_detected = any(is_in_safety_zone(x, z) for (x, z) in obstacles + persons)
+
+
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
-            if len(obstacles) > 0 or len(persons) > 0:
+            if hazard_detected:
                 if gps_speed > 7.0:
                     target_speed = 5  # từ từ giảm
                 elif gps_speed < 6.0:
@@ -504,7 +517,7 @@ def main():
                 else:
                     steering_angle = cf.seg_steer
 
-                target_speed = 6
+                target_speed = 7
 
             else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường
