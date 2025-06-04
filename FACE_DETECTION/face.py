@@ -61,7 +61,7 @@ class FaceRecognition:
                     if max_sim > cosine_threshold and 0 <= label < len(self.mydict):
                         recognized_name = self.mydict[label]
                     else:
-                        recognized_name = "Unknown"
+                        recognized_name = " "
 
                     results.append((coords, recognized_name))
                 except Exception as e:

@@ -220,7 +220,7 @@ def main():
     count_none = 0
     target_speed = 9
     speed_filtered = 1
-    alpha_speed = 0.93
+    alpha_speed = 0.91
 
     steering_filtered = 0  # Đặt ở đầu chương trình, ngoài vòng lặp
     alpha_steering = 0.7  # Hệ số lọc (gần 1: chậm phản ứng; gần 0: nhanh)
@@ -271,6 +271,7 @@ def main():
         # ------------------------- Optimal Path None => Replan
         while optimal_path is None:          
             print("optimal_path is None !!!")
+            stm32(angle=0, speed=0, brake_state=0)
             lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
    
             new_obstacles =  cf.obstacles
@@ -297,7 +298,7 @@ def main():
                 # stm32(angle= int(-5), speed=0, brake_state=0)
             elif count_none > 20:
                 print("Replanning failed too many times — entering safe mode.")
-                stm32(angle=steering_filtered, speed=1, brake_state=1)
+                stm32(angle=0, speed=1, brake_state=0)
                 # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
                 obstacles = []
                 obs = [] 
@@ -337,7 +338,7 @@ def main():
 
             found_person = False
             for person in persons:
-                if abs(person[0]) < danger_zone and abs(person[1]) < 4.0:
+                if abs(person[0]) < danger_zone and abs(person[1]) < 6.0:
                     found_person = True
                     break
 
@@ -449,7 +450,7 @@ def main():
                 should_stop = True
 
             # 3) RTK‑status hysteresis
-            if cf.rtk_status != "RTK Fixed":
+            if cf.rtk_status != "RTK Fixed" and cf.rtk_status != "Fusion":
 
                 if not rtk_bad:
                     rtk_bad = True
@@ -545,7 +546,7 @@ def main():
             print("Goal reached!")
             play__ = destination_sound.play() 
             play__.wait_done()
-            stm32(angle=steering_filtered, speed=0, brake_state=1) 
+            stm32(angle=steering_filtered, speed=0, brake_state=0) 
             return
         cf.seg_steer = steering_angle
         obstacles = []   

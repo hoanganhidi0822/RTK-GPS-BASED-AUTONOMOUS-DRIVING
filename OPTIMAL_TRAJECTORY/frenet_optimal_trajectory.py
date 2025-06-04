@@ -158,7 +158,7 @@ def calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0):
 
     # Create an array of lateral offsets and time durations
     # di_values = np.arange(-MAX_ROAD_WIDTH/4, MAX_ROAD_WIDTH*0.75, D_ROAD_W) # Do xe chạy bên làn phải
-    di_values = np.arange(0, MAX_ROAD_WIDTH*0.75, D_ROAD_W) # Do xe chạy bên làn phải
+    di_values = np.arange(-1, MAX_ROAD_WIDTH*0.67, D_ROAD_W) # Do xe chạy bên làn phải
     Ti_values = np.arange(MINT, MAXT, DT)
     
     # Loop through each lateral offset (di) and time duration (Ti)
@@ -603,7 +603,7 @@ def pure_pursuit_control_frenet(lat, lon, optimal_path, x, y, yaw, lookahead_dis
 
     # Tính góc lái bằng công thức Pure Pursuit
     steering_angle = -np.arctan2(2.0 * WB * np.sin(alpha), lookahead_distance) * 180/np.pi
-    steering_angle = np.clip(steering_angle, -35, 35)
+    steering_angle = np.clip(steering_angle, -30, 30)
 
     return steering_angle, alpha 
 

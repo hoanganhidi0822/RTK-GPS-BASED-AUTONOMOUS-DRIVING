@@ -20,9 +20,6 @@ client = OpenAI(api_key="sk-svcacct-9gqk7MnyK4YstIXhq_Xv5IgcJrNJBwEv1YAc82uq9aPK
 cf.cf_destination = "none"
 # client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
 
-
-
-
 class virtual_assistance:
     def __init__(self):
         self.recognizer = sr.Recognizer()

@@ -176,13 +176,17 @@ class PlotCanvas(FigureCanvas):
         self.ax.spines['left'].set_visible(False)
         self.ax.spines['bottom'].set_visible(False)
 
-        def rotate_array(x_arr, y_arr, theta):
-            x_arr = np.array(x_arr)
-            y_arr = np.array(y_arr)
-            x_rot = (x_arr - self.vehicle_pos[0]) * np.cos(theta) - (y_arr - self.vehicle_pos[1]) * np.sin(theta)
-            y_rot = (x_arr - self.vehicle_pos[0]) * np.sin(theta) + (y_arr - self.vehicle_pos[1]) * np.cos(theta)
-            return x_rot + self.vehicle_pos[0], y_rot + self.vehicle_pos[1]
+        def rotate(x, y, theta):
+            R = np.array([[np.cos(theta), -np.sin(theta)],
+                        [np.sin(theta),  np.cos(theta)]])
+            return np.dot(R, np.array([x, y]))
 
+        def rotate_array(x_arr, y_arr, theta):
+            dx = np.array(x_arr) - self.vehicle_pos[0]
+            dy = np.array(y_arr) - self.vehicle_pos[1]
+            x_rot = dx * np.cos(theta) - dy * np.sin(theta)
+            y_rot = dx * np.sin(theta) + dy * np.cos(theta)
+            return x_rot + self.vehicle_pos[0], y_rot + self.vehicle_pos[1]
         alpha = 0.2
         self.filtered_inv_yaw = alpha * (np.deg2rad(90) - self.vehicle_yaw) + (1 - alpha) * self.filtered_inv_yaw
         inv_yaw = self.filtered_inv_yaw
@@ -228,9 +232,9 @@ class PlotCanvas(FigureCanvas):
             dy = obs[1] - self.vehicle_pos[1]
             if not (-5 <= dx <= 5) or not (-25 <= dy <= 25):
                 continue
-            x_rot, y_rot = rotate_array([dx], [dy], self.filtered_inv_yaw)
-            x_plot = x_rot[0] + self.vehicle_pos[0]
-            y_plot = y_rot[0] + self.vehicle_pos[1] + 1
+            x_rot, y_rot = rotate(dx, dy, self.filtered_inv_yaw)
+            x_plot = x_rot + self.vehicle_pos[0]
+            y_plot = y_rot + self.vehicle_pos[1] + 1
             trans_data = Affine2D().rotate_around(x_plot, y_plot, self.filtered_inv_yaw) + self.ax.transData
             obstacle_img_rotated = OffsetImage(self.obstacle_icon, zoom=0.15)
             ab = AnnotationBbox(obstacle_img_rotated, (x_plot, y_plot), frameon=False)
@@ -702,9 +706,11 @@ class MapDisplayFrame(QFrame):
         threading.Thread(target=self.run_task, args=("go",), daemon=True).start()
 
     def run_task(self, location):
+        
         play_obj = wave_obj.play()
         play_obj.wait_done()
         task2(location)
+        self.show_camera_view()
         cf.record = 0
 
 class AutonomousCarUI(QWidget):
@@ -731,7 +737,7 @@ class AutonomousCarUI(QWidget):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(0)
 
-        self.status_frame = VehicleStatusFrame(self.left_frame)
+        self.status_frame    = VehicleStatusFrame(self.left_frame)
         self.vehicle_display = VehicleDisplayFrame(self.left_frame)
 
         left_layout.addWidget(self.status_frame)
@@ -739,7 +745,7 @@ class AutonomousCarUI(QWidget):
 
         # Tạo khung bên phải (bản đồ GPS)
         self.right_frame = MapDisplayFrame(self, self.show_listening)
-
+        
         # Cập nhật lại tỷ lệ phân chia nếu cần thiết
         splitter.addWidget(self.left_frame)
         splitter.addWidget(self.right_frame)
@@ -780,9 +786,12 @@ class AutonomousCarUI(QWidget):
         threading.Thread(target= task2_wrapper, daemon=True).start()
 
         def check_if_done():
+            
             if done1.is_set() and done2.is_set():
                 cf.record = 0
                 QTimer.singleShot(0, self.close_listening_and_show_map)
+                self.right_frame.show_camera_view()
+                
             else:
                 QTimer.singleShot(10, check_if_done)
 

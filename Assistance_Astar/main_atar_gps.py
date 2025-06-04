@@ -194,145 +194,145 @@ def astar(graph, start, goal):
 
 # Cấu hình file waypoint cho từng đoạn đường
 waypoint_files = {
-    ('H1' , 'BB' )  : "Assistance_Astar/MAP/THUAN/waypoint_1.txt" ,
-    ('H1' , 'DD' )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('H1' , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoint_2.txt" ,
-    ('H1' , 'TT' )  : "Assistance_Astar/MAP/THUAN/waypoint_3.txt" ,
-    ('H1' , 'C'  )  : "Assistance_Astar/MAP/THUAN/waypoint_4.txt" ,
-    ('H1' , 'CC' )  : "Assistance_Astar/MAP/THUAN/waypoint_5.txt",
-    ('H1' , 'F'  )  : "Assistance_Astar/MAP/THUAN/space.txt" ,
-    ('BB' , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoint_2.txt" ,
-    ('B'  , 'TT' )  : "Assistance_Astar/MAP/THUAN/waypoint_3.txt" ,
-    ('TT' , 'C'  )  : "Assistance_Astar/MAP/THUAN/waypoint_4.txt" ,
-    ('C'  , 'CC' )  : "Assistance_Astar/MAP/THUAN/waypoint_5.txt" ,
-    ('CC' , 'F'  )  : "Assistance_Astar/MAP/THUAN/waypoints_6.txt",
-    ('C'  , 'D'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('D'  , 'DD' )  : "Assistance_Astar/MAP/THUAN/waypoints_8.txt",
-    ('DD' , 'E'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('E'  , 'F'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('F'  , 'G'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('G'  , 'H'  )  : "Assistance_Astar/MAP/THUAN/waypoints_7.txt",
-    ('H'  , 'I'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('I'  , 'K'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('I'  , 'K'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('K'  , 'A'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    
-    ('A'  , 'K'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_1.txt",
-    ('K'  , 'I'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     ,
-    ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     ,
-    ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     ,
-    ('H'  , 'G'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     ,
-    ('G'  , 'F'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt",
-    ('F'  , 'CC' )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt",
-    ('CC' , 'C'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt",
-    ('C'  , 'TT' )  : "Assistance_Astar/MAP/NGHICH/space.txt"     ,
-    ('TT' , 'B'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_4.txt",
-    ('B'  , 'BB' )  : "Assistance_Astar/MAP/NGHICH/space.txt"     ,
-    ('BB' , 'A'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_5.txt",
+    ('H1' , 'BB' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_1.txt" ,
+    ('H1' , 'DD' )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('H1' , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_2.txt" ,
+    ('H1' , 'TT' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_3.txt" ,
+    ('H1' , 'C'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_4.txt" ,
+    ('H1' , 'CC' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_5.txt",
+    ('H1' , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt" ,
+    ('BB' , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_2.txt" ,
+    ('B'  , 'TT' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_3.txt" ,
+    ('TT' , 'C'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_4.txt" ,
+    ('C'  , 'CC' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_5.txt" ,
+    ('CC' , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_6.txt",
+    ('C'  , 'D'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('D'  , 'DD' )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_8.txt",
+    ('DD' , 'E'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('E'  , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('F'  , 'G'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('G'  , 'H'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_7.txt",
+    ('H'  , 'I'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('I'  , 'K'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('I'  , 'K'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('K'  , 'A'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+  
+    ('A'  , 'K'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_1.txt",
+    ('K'  , 'I'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     ,
+    ('I'  , 'H'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     ,
+    ('I'  , 'H'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     ,
+    ('H'  , 'G'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     ,
+    ('G'  , 'F'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt",
+    ('F'  , 'CC' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt",
+    ('CC' , 'C'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt",
+    ('C'  , 'TT' )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     ,
+    ('TT' , 'B'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_4.txt",
+    ('B'  , 'BB' )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     ,
+    ('BB' , 'A'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_5.txt",
 }
 
 
 waypoint_files_1 = {
-    ('H1' , 'BB' )  : "Assistance_Astar/MAP/THUAN/waypoint_1.txt" ,
-    ('H1' , 'DD' )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('H1' , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoint_2.txt" ,
-    ('H1' , 'TT' )  : "Assistance_Astar/MAP/THUAN/waypoint_3.txt" ,
-    ('H1' , 'C'  )  : "Assistance_Astar/MAP/THUAN/waypoint_4.txt" ,
-    ('H1' , 'CC' )  : "Assistance_Astar/MAP/THUAN/waypoint_5.txt",
-    ('H1' , 'F'  )  : "Assistance_Astar/MAP/THUAN/space.txt" ,
-    ('J' , 'H1'  )  : "Assistance_Astar/MAP/THUAN/waypoints_10_trungtam.txt" ,
-    ('BB' , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoint_2.txt" ,
-    ('B'  , 'TT' )  : "Assistance_Astar/MAP/THUAN/waypoint_3.txt" ,
-    ('TT' , 'C'  )  : "Assistance_Astar/MAP/THUAN/waypoint_4.txt" ,
-    ('C'  , 'CC' )  : "Assistance_Astar/MAP/THUAN/waypoint_5.txt" ,
-    ('CC' , 'F'  )  : "Assistance_Astar/MAP/THUAN/waypoints_6.txt",
-    ('C'  , 'D'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('D'  , 'DD' )  : "Assistance_Astar/MAP/THUAN/waypoints_8.txt",
-    ('DD' , 'E'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('E'  , 'F'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('F'  , 'G'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('G'  , 'H'  )  : "Assistance_Astar/MAP/THUAN/waypoints_7.txt",
-    ('H'  , 'I'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('I'  , 'K'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('I'  , 'K'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('K'  , 'A'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('J'  , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoints_10_trung_tam.txt"      ,
-     ('B' , 'J'  )  : "Assistance_Astar/MAP/NGHICH/MAP_TRUNG_TAM_NGHICH.txt", #
+    ('H1' , 'BB' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_1.txt" ,
+    ('H1' , 'DD' )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('H1' , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_2.txt" ,
+    ('H1' , 'TT' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_3.txt" ,
+    ('H1' , 'C'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_4.txt" ,
+    ('H1' , 'CC' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_5.txt",
+    ('H1' , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt" ,
+    ('J' , 'H1'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_10_trungtam.txt" ,
+    ('BB' , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_2.txt" ,
+    ('B'  , 'TT' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_3.txt" ,
+    ('TT' , 'C'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_4.txt" ,
+    ('C'  , 'CC' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_5.txt" ,
+    ('CC' , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_6.txt",
+    ('C'  , 'D'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('D'  , 'DD' )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_8.txt",
+    ('DD' , 'E'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('E'  , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('F'  , 'G'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('G'  , 'H'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_7.txt",
+    ('H'  , 'I'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('I'  , 'K'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('I'  , 'K'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('K'  , 'A'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('J'  , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_10_trung_tam.txt"      ,
+     ('B' , 'J'  )  : "Assistance_Astar/MAP_NT/NGHICH/MAP_TRUNG_TAM_NGHICH.txt", #
     
 }
 
 waypoint_files_1_TT = {
-    ('H1' , 'BB' )  : "Assistance_Astar/MAP/THUAN/waypoint_1.txt" ,
-    ('H1' , 'DD' )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('H1' , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoints_10_trungtam.txt",
-    ('H1' , 'TT' )  : "Assistance_Astar/MAP/THUAN/waypoint_3.txt" ,
-    ('H1' , 'C'  )  : "Assistance_Astar/MAP/THUAN/waypoint_4.txt" ,
-    ('H1' , 'CC' )  : "Assistance_Astar/MAP/THUAN/waypoint_5.txt",
-    ('H1' , 'F'  )  : "Assistance_Astar/MAP/THUAN/space.txt" ,
-    ('J' , 'H1'  )  : "Assistance_Astar/MAP/THUAN/space.txt" ,
-    ('BB' , 'B'  )  : "Assistance_Astar/MAP/THUAN/waypoint_2.txt" ,
-    ('B'  , 'TT' )  : "Assistance_Astar/MAP/THUAN/waypoint_3_tt.txt" ,
-    ('TT' , 'C'  )  : "Assistance_Astar/MAP/THUAN/waypoint_4.txt" ,
-    ('C'  , 'CC' )  : "Assistance_Astar/MAP/THUAN/waypoint_5.txt" ,
-    ('CC' , 'F'  )  : "Assistance_Astar/MAP/THUAN/waypoints_6.txt",
-    ('C'  , 'D'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('D'  , 'DD' )  : "Assistance_Astar/MAP/THUAN/waypoints_8.txt",
-    ('DD' , 'E'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('E'  , 'F'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('F'  , 'G'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('G'  , 'H'  )  : "Assistance_Astar/MAP/THUAN/waypoints_7.txt",
-    ('H'  , 'I'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('I'  , 'K'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('I'  , 'K'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('K'  , 'A'  )  : "Assistance_Astar/MAP/THUAN/space.txt"      ,
-    ('J'  , 'B'  )  : "Assistance_Astar/MAP/THUAN/space.txt" ,  
-    ('B' , 'J'  )   : "Assistance_Astar/MAP/NGHICH/MAP_TRUNG_TAM_NGHICH.txt", #
+    ('H1' , 'BB' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_1.txt" ,
+    ('H1' , 'DD' )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('H1' , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_10_trungtam.txt",
+    ('H1' , 'TT' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_3.txt" ,
+    ('H1' , 'C'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_4.txt" ,
+    ('H1' , 'CC' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_5.txt",
+    ('H1' , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt" ,
+    ('J' , 'H1'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt" ,
+    ('BB' , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_2.txt" ,
+    ('B'  , 'TT' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_3_tt.txt" ,
+    ('TT' , 'C'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_4.txt" ,
+    ('C'  , 'CC' )  : "Assistance_Astar/MAP_NT/THUAN/waypoint_5.txt" ,
+    ('CC' , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_6.txt",
+    ('C'  , 'D'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('D'  , 'DD' )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_8.txt",
+    ('DD' , 'E'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('E'  , 'F'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('F'  , 'G'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('G'  , 'H'  )  : "Assistance_Astar/MAP_NT/THUAN/waypoints_7.txt",
+    ('H'  , 'I'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('I'  , 'K'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('I'  , 'K'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('K'  , 'A'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt"      ,
+    ('J'  , 'B'  )  : "Assistance_Astar/MAP_NT/THUAN/space.txt" ,  
+    ('B' , 'J'  )   : "Assistance_Astar/MAP_NT/NGHICH/MAP_TRUNG_TAM_NGHICH.txt", #
 }
 waypoint_files_2 = {
-    ('H1' , 'BB' )  : "Assistance_Astar/MAP/NGHICH/waypoint_4.txt" ,
-    ('H1' , 'B'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_4.txt" ,
-    ('H1' , 'TT' )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt" ,
-    ('H1' , 'C'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt" ,
-    ('H1' , 'CC' )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt",
-    ('H1' , 'F'  )  : "Assistance_Astar/MAP/NGHICH/space.txt" ,
+    ('H1' , 'BB' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_4.txt" ,
+    ('H1' , 'B'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_4.txt" ,
+    ('H1' , 'TT' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt" ,
+    ('H1' , 'C'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt" ,
+    ('H1' , 'CC' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt",
+    ('H1' , 'F'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt" ,
 
-    ('A'  , 'K'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_1.txt", # 
-    ('K'  , 'I'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('H'  , 'G'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('G'  , 'F'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt", #
-    ('F'  , 'CC' )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt", #
-    ('CC' , 'C'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt", #
-    ('C'  , 'TT' )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('TT' , 'B'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_4.txt", #
-    ('B'  , 'BB' )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('BB' , 'A'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_5.txt", #
-    ('B' , 'J'  )   : "Assistance_Astar/MAP/NGHICH/MAP_TRUNG_TAM_NGHICH.txt", #  
+    ('A'  , 'K'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_1.txt", # 
+    ('K'  , 'I'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('I'  , 'H'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('I'  , 'H'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('H'  , 'G'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('G'  , 'F'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt", #
+    ('F'  , 'CC' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt", #
+    ('CC' , 'C'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt", #
+    ('C'  , 'TT' )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('TT' , 'B'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_4.txt", #
+    ('B'  , 'BB' )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('BB' , 'A'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_5.txt", #
+    ('B' , 'J'  )   : "Assistance_Astar/MAP_NT/NGHICH/MAP_TRUNG_TAM_NGHICH.txt", #  
 }
 
 waypoint_files_2_TT = {
-    ('H1' , 'BB' )  : "Assistance_Astar/MAP/NGHICH/waypoint_4.txt" ,
-    ('H1' , 'B'  )  : "Assistance_Astar/MAP/NGHICH/waypoints_10_trungtam.txt" ,
-    ('J' , 'B'  )  : "Assistance_Astar/MAP/NGHICH/waypoints_10_trungtam.txt" ,
-    ('H1' , 'TT' )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt" ,
-    ('H1' , 'C'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt" ,
-    ('H1' , 'CC' )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt",
-    ('H1' , 'F'  )  : "Assistance_Astar/MAP/NGHICH/space.txt" ,
+    ('H1' , 'BB' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_4.txt" ,
+    ('H1' , 'B'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoints_10_trungtam.txt" ,
+    ('J' , 'B'  )   : "Assistance_Astar/MAP_NT/NGHICH/waypoints_10_trungtam.txt" ,
+    ('H1' , 'TT' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt" ,
+    ('H1' , 'C'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt" ,
+    ('H1' , 'CC' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt",
+    ('H1' , 'F'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt" ,
 
-    ('A'  , 'K'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_1.txt", # 
-    ('K'  , 'I'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('I'  , 'H'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('H'  , 'G'  )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('G'  , 'F'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt", #
-    ('F'  , 'CC' )  : "Assistance_Astar/MAP/NGHICH/waypoint_2.txt", #
-    ('CC' , 'C'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_3.txt", #
-    ('C'  , 'TT' )  : "Assistance_Astar/MAP/NGHICH/space.txt"     , #
-    ('TT' , 'B'  )  : "Assistance_Astar/MAP/NGHICH/space.txt", #
-    ('B'  , 'BB' )  : "Assistance_Astar/MAP/NGHICH/waypoint_4_tt.txt", #
-    ('BB' , 'A'  )  : "Assistance_Astar/MAP/NGHICH/waypoint_5.txt", #
-    ('B' , 'J'  )   : "Assistance_Astar/MAP/NGHICH/trash.txt", #
+    ('A'  , 'K'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_1.txt", # 
+    ('K'  , 'I'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('I'  , 'H'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('I'  , 'H'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('H'  , 'G'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('G'  , 'F'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt", #
+    ('F'  , 'CC' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_2.txt", #
+    ('CC' , 'C'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_3.txt", #
+    ('C'  , 'TT' )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt"     , #
+    ('TT' , 'B'  )  : "Assistance_Astar/MAP_NT/NGHICH/space.txt", #
+    ('B'  , 'BB' )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_4_tt.txt", #
+    ('BB' , 'A'  )  : "Assistance_Astar/MAP_NT/NGHICH/waypoint_5.txt", #
+    ('B' , 'J'  )   : "Assistance_Astar/MAP_NT/NGHICH/trash.txt", #
 }
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371000  # Bán kính Trái Đất (m)
