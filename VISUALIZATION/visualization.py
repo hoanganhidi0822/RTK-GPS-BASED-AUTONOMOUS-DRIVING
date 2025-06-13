@@ -566,11 +566,11 @@ class MapDisplayFrame(QFrame):
 
         self.init_face_detection()
     def init_face_detection(self):
-        mydict = ['Thay Giang', 'Thay Ha', 'Thay Hai', 'Thay Thanh', 'Hoang Anh', 'Quoc Kha']  # Ví dụ thêm tên
+        mydict = ['Co Nguyet', 'Thay Giang', 'Thay Ha', 'Thay Hai','Thay Phong', 'Thay Thanh', 'Thay Trung']  # Ví dụ thêm tên
         self.face_detector = FaceRecognition(
-            face_detection_model  ='FACE_DETECTION/model1/face_detection_yunet_2023mar.onnx',
-            face_recognition_model='FACE_DETECTION/model1/face_recognition_sface_2021dec.onnx',
-            svc_path              ='FACE_DETECTION/model1/svc_model.pkl',
+            face_detection_model  ='FACE_DETECTION/model2/face_detection_yunet_2023mar.onnx',
+            face_recognition_model='FACE_DETECTION/model2/face_recognition_sface_2021dec.onnx',
+            svc_path              ='FACE_DETECTION/model2/svc_model.pkl',
             mydict=mydict
         )
 
@@ -626,6 +626,12 @@ class MapDisplayFrame(QFrame):
                     self.play_audio("Thay Thanh")
                 elif "Thay Ha" in names_detected:
                     self.play_audio("Thay Ha")
+                elif "Co Nguyet" in names_detected:
+                    self.play_audio("Co Nguyet")
+                elif "Thay Trung" in names_detected:
+                    self.play_audio("Thay Trung")
+                elif "Thay Phong" in names_detected:
+                    self.play_audio("Thay Phong")
                 else:
                     self.play_audio("default")  # âm thanh chào chung
 
@@ -654,6 +660,12 @@ class MapDisplayFrame(QFrame):
                 file_path = "VISUALIZATION/voice/dinhthanh.wav"
             elif name == "Thay Ha":
                 file_path = "VISUALIZATION/voice/myha.wav"
+            elif name == "Co Nguyet":
+                file_path = "VISUALIZATION/voice/coNguyet.wav"
+            elif name == "Thay Phong":
+                file_path = "VISUALIZATION/voice/thayPhong.wav"
+            elif name == "Thay Trung":
+                file_path = "VISUALIZATION/voice/thayTrung.wav"
             else:
                 file_path = "VISUALIZATION/sound/output.wav"
 

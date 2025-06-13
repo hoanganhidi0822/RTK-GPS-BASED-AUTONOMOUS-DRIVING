@@ -11,10 +11,9 @@ from pydub import AudioSegment
 # }
 
 destination = {
-    'hieugiang':     "Chào thầy Hiếu Giang! Rất hân hạnh được phục vụ thầy hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Thầy có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Thầy cần tôi hỗ trợ gì ạ?",
-    'dinhthanh':     "Chào thầy Đình Thành! Rất hân hạnh được phục vụ thầy hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Thầy có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Thầy cần tôi hỗ trợ gì ạ?",
-    'thanhhai': "Chào thầy Thanh Hải! Rất hân hạnh được phục vụ thầy hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Thầy có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Thầy cần tôi hỗ trợ gì ạ?",
-    'myha': "Chào thầy Mỹ Hà! Rất hân hạnh được phục vụ thầy hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Thầy có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Thầy cần tôi hỗ trợ gì ạ?",
+    'thayTrung':     "Xin Chào thầy Trung! Rất hân hạnh được phục vụ thầy hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Thầy có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Thầy cần tôi hỗ trợ gì ạ?",
+    'thayPhong':     "Xin Chào thầy Phong! Rất hân hạnh được phục vụ thầy hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Thầy có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Thầy cần tôi hỗ trợ gì ạ?",
+    'coNguyet': "Chào Cô Minh Nguyệt! Rất hân hạnh được phục vụ cô Nguyệt hôm nay. Xe có thể đến các địa điểm như Khu C, Khu Đê, tòa nhà trung tâm, tòa Việt Đức và xưởng gỗ. Cô có thể chọn địa điểm bằng các ấn vào nút micro để ra lệnh bằng giọng nói hoặc chọn trực tiếp trên giao diện. Cô Nguyệt cần em hỗ trợ gì ạ?",
 }
 
 # Tạo thư mục lưu file
