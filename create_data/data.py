@@ -3,7 +3,7 @@ import os
 
 # Cấu hình
 camera_index = 2  # Thường là 0, có thể thay đổi nếu bạn có nhiều camera
-output_folder = "captured_images"
+output_folder = "captured_images1"
 save_every_n_frames = 10
 
 # Tạo thư mục lưu ảnh nếu chưa tồn tại
@@ -17,7 +17,7 @@ if not cap.isOpened():
     exit()
 
 frame_count = 0
-image_count = 875
+image_count = 569
 
 print("Đang đọc từ camera. Nhấn 'q' để thoát.")
 

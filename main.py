@@ -454,7 +454,7 @@ def main():
         # Check if the goal is reached
         if np.isclose(x, tx[-1], atol = 3.5) and np.isclose(y, ty[-1], atol = 3.5):
             gps_speed = "Goal reached!"
-            cf.camera_error = 1
+            # cf.camera_error = 1
             # stm32(angle=0, speed=0, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play()

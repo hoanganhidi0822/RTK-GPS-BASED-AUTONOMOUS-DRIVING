@@ -5,12 +5,12 @@ import os
 import matplotlib.pyplot as plt
 import torch.nn as nn
 
+# from config import (
+#     VIS_LABEL_MAP as viz_map
+# )
 from OBSTACLES.Segformer.config import (
     VIS_LABEL_MAP as viz_map
 )
-# from Segformer.config import (
-#     VIS_LABEL_MAP as viz_map
-# )
 
 plt.style.use('ggplot')
 

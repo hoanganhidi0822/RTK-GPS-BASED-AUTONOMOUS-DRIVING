@@ -199,12 +199,12 @@ class PlotCanvas(FigureCanvas):
 
         if len(self.left_x) != len(self.tx):
             MAX_ROAD_WIDTH = 6.0
-            self.left_x  = self.tx + (MAX_ROAD_WIDTH * 0.75 + 0.5) * np.cos(self.tyaw + np.pi / 2)
-            self.left_y  = self.ty + (MAX_ROAD_WIDTH * 0.75 + 0.5) * np.sin(self.tyaw + np.pi / 2)
-            self.mid_x   = self.tx + (MAX_ROAD_WIDTH * 0.25)       * np.cos(self.tyaw + np.pi / 2)
-            self.mid_y   = self.ty + (MAX_ROAD_WIDTH * 0.25)       * np.sin(self.tyaw + np.pi / 2)
-            self.right_x = self.tx + (MAX_ROAD_WIDTH / 4 + 0.5)    * np.cos(self.tyaw - np.pi / 2)
-            self.right_y = self.ty + (MAX_ROAD_WIDTH / 4 + 0.5)    * np.sin(self.tyaw - np.pi / 2)
+            self.left_x  = self.tx + (MAX_ROAD_WIDTH * 0.67 ) * np.cos(self.tyaw + np.pi / 2)
+            self.left_y  = self.ty + (MAX_ROAD_WIDTH * 0.67 ) * np.sin(self.tyaw + np.pi / 2)
+            self.mid_x   = self.tx + (MAX_ROAD_WIDTH * 0.125) * np.cos(self.tyaw + np.pi / 2)
+            self.mid_y   = self.ty + (MAX_ROAD_WIDTH * 0.125) * np.sin(self.tyaw + np.pi / 2)
+            self.right_x = self.tx + (MAX_ROAD_WIDTH * 0.33 ) * np.cos(self.tyaw - np.pi / 2)
+            self.right_y = self.ty + (MAX_ROAD_WIDTH * 0.33 ) * np.sin(self.tyaw - np.pi / 2)
 
         left_x_rot, left_y_rot   = rotate_array(self.left_x, self.left_y, inv_yaw)
         mid_x_rot, mid_y_rot     = rotate_array(self.mid_x, self.mid_y, inv_yaw)
@@ -357,8 +357,6 @@ class VehicleStatusFrame(QFrame):
             """)
 
         self.vehicle_status_label.setText(f"{status_text}")
-
-
 
 class VehicleDisplayFrame(QFrame):
     def __init__(self, parent=None):
@@ -558,6 +556,8 @@ class MapDisplayFrame(QFrame):
         cam_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
 
         self.stacked_layout.addWidget(self.camera_widget)
+        
+        self.play_obj = None
 
 
         self.camera_timer = QTimer(self)
@@ -579,7 +579,7 @@ class MapDisplayFrame(QFrame):
         
         self.player = QMediaPlayer()
 
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(2)
         self.cap.set(cv2.CAP_PROP_FPS, 60)  # Điều chỉnh FPS
         
         # Ngay khi khởi động thì hiển thị giao diện camera
@@ -613,7 +613,7 @@ class MapDisplayFrame(QFrame):
             if self.face_detect_frame_count >= 20 and not self.face_detect_triggered:
                 self.face_detect_triggered = True
                 self.face_timer.stop()
-                self.camera_timer.start(100) 
+                self.camera_timer.start(120) 
                 self.stacked_layout.setCurrentWidget(self.main_widget)
                 self.show_main_view()
 
@@ -637,29 +637,32 @@ class MapDisplayFrame(QFrame):
         rgb = cv2.resize(rgb, (1080, 720))
         qimg = QImage(rgb.data, rgb.shape[1], rgb.shape[0], rgb.shape[1] * 3, QImage.Format_RGB888)
         self.camera_label.setPixmap(QPixmap.fromImage(qimg))
-
+    def stop_audio(self):
+        if self.play_obj and self.play_obj.is_playing():
+            self.play_obj.stop()
+            self.play_obj = None
     def play_audio(self, name):
-        if self.cap.isOpened():
+        if self.cap and self.cap.isOpened():
             self.cap.release()
 
         def play_and_then():
             if name == "Thay Giang":
-                file_path = "VISUALIZATION/voice/hieugiang.mp3"
+                file_path = "VISUALIZATION/voice/hieugiang.wav"
             elif name == "Thay Hai":
-                file_path = "VISUALIZATION/voice/thanhhai.mp3"
+                file_path = "VISUALIZATION/voice/thanhhai.wav"
             elif name == "Thay Thanh":
-                file_path = "VISUALIZATION/voice/dinhthanh.mp3"
+                file_path = "VISUALIZATION/voice/dinhthanh.wav"
             elif name == "Thay Ha":
-                file_path = "VISUALIZATION/voice/myha.mp3"
+                file_path = "VISUALIZATION/voice/myha.wav"
             else:
-                file_path = "test/output.mp3"  # Âm thanh chung
+                file_path = "VISUALIZATION/sound/output.wav"
 
-            sound = AudioSegment.from_mp3(file_path)
-            sound = sound.apply_gain(6) 
-            play(sound)
+            wave_obj = sa.WaveObject.from_wave_file(file_path)
+            self.play_obj = wave_obj.play()
+            self.play_obj.wait_done()
 
         threading.Thread(target=play_and_then).start()
-
+        
     def show_camera_view(self):
 
         self.stacked_layout.setCurrentWidget(self.camera_widget)
@@ -687,22 +690,25 @@ class MapDisplayFrame(QFrame):
         else:
             self.camera_label.setText("Không có ảnh từ camera.")
         
-
-
     # ===== Dummy callback functions =====
     def khu_c_clicked(self):
+        self.stop_audio()
         threading.Thread(target=self.run_task, args=("khu_c",), daemon=True).start()
 
     def khu_d_clicked(self):
+        self.stop_audio()
         threading.Thread(target=self.run_task, args=("khu_d",), daemon=True).start()
 
     def trung_tam_clicked(self):
+        self.stop_audio()
         threading.Thread(target=self.run_task, args=("trung_tam_truoc",), daemon=True).start()
 
     def viet_duc_clicked(self):
+        self.stop_audio()
         threading.Thread(target=self.run_task, args=("viet_duc",), daemon=True).start()
 
     def xuong_go_clicked(self):
+        self.stop_audio()
         threading.Thread(target=self.run_task, args=("go",), daemon=True).start()
 
     def run_task(self, location):
@@ -767,6 +773,7 @@ class AutonomousCarUI(QWidget):
         # Hiển thị dialog NGAY LẬP TỨC
         play_micro = micro_sound.play()
         play_micro.wait_done()
+        self.right_frame.stop_audio()
         self.listening_dialog = ListeningDialog(self.right_frame, self)
         self.listening_dialog.show()
 

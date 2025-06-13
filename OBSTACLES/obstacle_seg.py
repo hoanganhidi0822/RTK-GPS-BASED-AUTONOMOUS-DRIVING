@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
 from OBSTACLES.Segformer.road_segmentation import get_steering_angle 
-camera_index = 2
+camera_index = 0
 
 cf.det_image = np.zeros((480, 640, 3))
 cf.depth_image = np.zeros((480, 640, 3))

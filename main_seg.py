@@ -8,7 +8,7 @@ from RTK_GPS.GPS_module import *
 from HD_MAP.HDMAP import *
 from CONTROLLER.utils.communication import STM32
 from OPTIMAL_TRAJECTORY.frenet_optimal_trajectory import *
-camera_index = 0
+
 from OBSTACLES.obstacle_seg import process_depth
 import sys
 from VISUALIZATION.visualization import *
@@ -56,6 +56,7 @@ cf.camera_error = 0
 cf.seg_mode = 0
 cf.seg_steer = 0
 cf.is_intersection = 0
+cf.is_target = 0
 
 def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_speed):
     cf.tx                 = tx
@@ -84,9 +85,8 @@ def update_state(ser):
     lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
     # rtk_status = "Single"
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    # lat, lon, car_heading, rtk_status, speed = 10.8531900250,106.7714968267,185, "RTK Fixed", 15
+    # lat, lon, car_heading, rtk_status, speed = 10.8527006850,106.7714474283,184, "RTK Fixed", 15
     # time.sleep(0.1)
-    
     
     # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
@@ -131,7 +131,7 @@ def classify_turn(angle, threshold=7):
 
 # Ngưỡng vùng an toàn phía trước xe
 SAFETY_ZONE_X = 3 
-SAFETY_ZONE_Z = 5.0  
+SAFETY_ZONE_Z = 7.0  
 
 def is_in_safety_zone(x, z):
     return abs(x) <= SAFETY_ZONE_X and 0 <= z <= SAFETY_ZONE_Z
@@ -233,15 +233,20 @@ def main():
     still_turning = False
     is_intersection = 0
     log_count = 0
+
+    critical_failure = False
     # --- Main Loop --- #
     while True:
         log_count += 1
+        obs = []
         # Update vehicle state using RTK GPS
         lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
         cf.rtk_status = rtk_status
         cf.latitude   = lat
         cf.longitude  = lon
+        
         if x == None:
+            obs = []
             continue
 
         # --------------------   Update person state  ------------------- #
@@ -271,7 +276,6 @@ def main():
         # ------------------------- Optimal Path None => Replan
         while optimal_path is None:          
             print("optimal_path is None !!!")
-            stm32(angle=0, speed=0, brake_state=0)
             lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
    
             new_obstacles =  cf.obstacles
@@ -288,21 +292,25 @@ def main():
             ob = np.array(obs)
             s0, c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
             optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
-            # c_d_d = optimal_path.d_d[1]
-            # c_d_dd = optimal_path.d_dd[1]
-            # c_speed = car_speed    
 
-            count_none += 1
-            if count_none == 3:
-                pass
-                # stm32(angle= int(-5), speed=0, brake_state=0)
-            elif count_none > 20:
-                print("Replanning failed too many times — entering safe mode.")
-                stm32(angle=0, speed=1, brake_state=0)
-                # break  # hoặc flag lại để tự quay lại vòng điều khiển khác
-                obstacles = []
-                obs = [] 
-                count_none = 0
+            target_speed = 1
+            speed_filtered = 1
+            steering_filtered = 0
+            # cf.seg_mode = True
+            # critical_failure = True
+            stm32(angle=0, speed=1, brake_state=1)
+            obstacles = []
+
+
+        # if optimal_path is None:
+        #     print("[ERROR] Optimal path is None — STOP IMMEDIATELY!")
+        #     target_speed = 1
+        #     speed_filtered = 1
+        #     steering_filtered = 0
+        #     # cf.seg_mode = True
+        #     # critical_failure = True
+        #     stm32(angle=0, speed=speed_filtered, brake_state=1)
+        #     continue  
 
         #####----------------------------------------------------------------------------------------------------------------------------#####
         if x is not None:
@@ -334,7 +342,7 @@ def main():
             except Exception as e:
                 print("[WARNING] Curvature calc failed:", e)
 
-            danger_zone = 1.5  # mét
+            danger_zone = 1.6  # mét
 
             found_person = False
             for person in persons:
@@ -347,7 +355,6 @@ def main():
             # Phát hiện người lần đầu
             if found_person and person_detected_time is None:
                 person_detected_time = current_time
-
 
             # Không còn người trong vùng nguy hiểm
             elif not found_person:
@@ -419,8 +426,6 @@ def main():
 
 
             hazard_detected = any(is_in_safety_zone(x, z) for (x, z) in obstacles + persons)
-
-
             # --------- GIẢM TỐC KHI CÓ VẬT CẢN --------- #
             if hazard_detected:
                 if gps_speed > 7.0:
@@ -437,7 +442,8 @@ def main():
 
             #################### --- STOP --- ###################################
             should_stop = False
-            seg_mode = False  # dùng segmentation để điều khiển khi mất GPS
+            seg_mode = False  # 
+
             # 1. Camera lỗi
             if cf.camera_error == 1:
                 print("[WARNING] Camera error – Dừng xe!")
@@ -540,8 +546,8 @@ def main():
             persons = [] 
         # Check if the goal is reached
         if np.isclose(x, tx[-1], atol = 2.5) and np.isclose(y, ty[-1], atol = 2.5):
-            gps_speed = "Goal reached!"
-            cf.camera_error = 1
+            cf.speed = "Goal reached!"
+            cf.is_target = 1
             stm32(angle=0, speed=1, brake_state=1) 
             print("Goal reached!")
             play__ = destination_sound.play() 

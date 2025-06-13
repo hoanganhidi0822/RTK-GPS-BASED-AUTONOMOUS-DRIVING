@@ -386,7 +386,7 @@ def project_point_on_line(p, a, b):
 
     return projected_x, projected_y
 
-def find_nearest_waypoints(input_lat, input_lon, base_folder="Assistance_Astar/MAP/"):
+def find_nearest_waypoints(input_lat, input_lon, base_folder="Assistance_Astar/MAP_NT/"):
     txt_files = glob.glob(f"{base_folder}/THUAN/*.txt") + glob.glob(f"{base_folder}/NGHICH/*.txt")
     
     nearest_file = None
@@ -593,7 +593,7 @@ def run_map(name):
         current_position = (lat, lon)
         # current_position = (10.8532734317,106.7715069650)
     else:
-        current_position = (10.8531900250,106.7714968267) # Khu C
+        current_position = (10.8533177633,106.7715181733) # Khu C
 
     finder = LocationFinder()
     target_node = finder.get_key(name)
