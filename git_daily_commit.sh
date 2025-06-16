@@ -10,7 +10,7 @@ git add .
 # Tạo commit với thời gian hiện tại
 COMMIT_MSG="update: $(date '+%Y-%m-%d %H:%M:%S')"
 # COMMIT_MSG="Simulation"
-echo "Commit with message: '$COMMIT_MSG'"
+echo "Commit with message: 'code main"
 git commit -m "$COMMIT_MSG"
 
 # Đẩy lên nhánh hiện tại
