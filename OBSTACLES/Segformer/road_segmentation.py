@@ -13,7 +13,7 @@ IMAGE_SIZE = (640, 480)
 ROAD_CLASS = 1
 ROWS_TO_CHECK = [170, 190, 220, 270, 320]
 WEIGHTS = np.array([0.0, 0.0, 0.8, 0.0, 0.0], dtype=np.float32)
-X_REF =  320 # Vị trí trung tâm ảnh tham chiếu
+X_REF =  325 # Vị trí trung tâm ảnh tham chiếu
 
 # --- Load model 1 lần ---
 extractor = SegformerFeatureExtractor()

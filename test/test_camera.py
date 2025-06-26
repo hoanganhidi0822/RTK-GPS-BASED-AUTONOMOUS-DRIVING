@@ -2,7 +2,8 @@
 import cv2
 import matplotlib.pyplot as plt
 
-cap = cv2.VideoCapture(0)
+
+cap = cv2.VideoCapture(2)
 
 plt.ion()  # Bật chế độ interactive cho matplotlib
 fig, ax = plt.subplots(figsize=(10, 6))

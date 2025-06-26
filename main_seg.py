@@ -131,7 +131,7 @@ def classify_turn(angle, threshold=7):
 
 # Ngưỡng vùng an toàn phía trước xe
 SAFETY_ZONE_X = 3 
-SAFETY_ZONE_Z = 7.0  
+SAFETY_ZONE_Z = 8.0  
 
 def is_in_safety_zone(x, z):
     return abs(x) <= SAFETY_ZONE_X and 0 <= z <= SAFETY_ZONE_Z
@@ -145,6 +145,7 @@ def main():
     # Initial GPS state
     lat, lon, car_heading = 10.85257737,106.7714248783, 185
     x, y = 16.993362287481073, 152.51032455731195
+
     wx, wy = [],[]
 
     # Obstacles
@@ -202,7 +203,7 @@ def main():
             pass  
 
     # Start thread for depth processing
-    
+    time.sleep(1)
     depth_thread_instance = threading.Thread(target=depth_thread)
     depth_thread_instance.daemon = True
     depth_thread_instance.start()
@@ -273,33 +274,48 @@ def main():
         # ------------------------- Generate optimal path ------------------------- #
         optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
-        # ------------------------- Optimal Path None => Replan
-        while optimal_path is None:          
-            print("optimal_path is None !!!")
+        # ------------------------- Optimal Path None => Replan ------------------------- #
+        retry = 0
+        MAX_RETRY = 5
+
+        while optimal_path is None and retry < MAX_RETRY:
+            stm32(angle=0, speed=1, brake_state=1)
+            print(f"[WARNING] optimal_path is None — thử lại lần {retry + 1}/{MAX_RETRY}")
+            retry += 1
+
             lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
-   
-            new_obstacles =  cf.obstacles
-            # Chỉ cập nhật nếu có dữ liệu mới hợp lệ
+            
+            # Cập nhật obstacles
+            obstacles = []
+            new_obstacles = cf.obstacles
             if len(new_obstacles): 
-                obstacles = []
                 obstacles = new_obstacles
                 new_obstacles = []
                 
-            # obstacles = [[-8,12]]
+            obs = []
             for obstacle in obstacles:
                 obs.append(transform_obstacle_to_global(x, y, yaw, obstacle[1], obstacle[0]))
 
             ob = np.array(obs)
             s0, c_d, c_d_d, c_d_dd = cartesian_to_frenet(x, y, yaw, csp)
+
+            # Tính lại quỹ đạo
             optimal_path, paths = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
+            # Dừng tạm thời để tránh lỗi tiếp tục
             target_speed = 1
             speed_filtered = 1
             steering_filtered = 0
-            # cf.seg_mode = True
-            # critical_failure = True
             stm32(angle=0, speed=1, brake_state=1)
             obstacles = []
+
+        # Nếu quá số lần retry mà vẫn không có optimal_path => fallback
+        if optimal_path is None:
+            print("[ERROR] Không thể tìm được quỹ đạo hợp lệ sau nhiều lần thử — Dừng xe hoặc chuyển chế độ.")
+            cf.seg_mode = True  # Hoặc có thể return hoặc raise error tùy thiết kế
+            stm32(angle=0, speed=0, brake_state=1)
+            time.sleep(1)
+            continue  # hoặc return
 
 
         # if optimal_path is None:
@@ -418,6 +434,7 @@ def main():
             # Giới hạn trên
             target_speed = min(target_speed, 10)
 
+
             # --------- GIẢM TỐC KHI GẦN ĐÍCH --------- #
             distance_to_goal = np.hypot(tx[-1] - x, ty[-1] - y)
 
@@ -431,9 +448,9 @@ def main():
                 if gps_speed > 7.0:
                     target_speed = 5  # từ từ giảm
                 elif gps_speed < 6.0:
-                    target_speed = 8  # tăng nhẹ để đạt ~7
+                    target_speed = 8.0  # tăng nhẹ để đạt ~7
                 else:
-                    target_speed = 7  # đã ổn định
+                    target_speed = 7.0  # đã ổn định
                 speed_filtered = target_speed
 
             # Reset sau khi xử lý
@@ -524,7 +541,7 @@ def main():
                 else:
                     steering_angle = cf.seg_steer
 
-                target_speed = 7
+                target_speed = 6
 
             else:
                 seg_mode_start_time = None  # reset nếu trở lại chế độ bình thường

@@ -579,7 +579,7 @@ class MapDisplayFrame(QFrame):
         
         self.player = QMediaPlayer()
 
-        self.cap = cv2.VideoCapture(2)
+        self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FPS, 60)  # Điều chỉnh FPS
         
         # Ngay khi khởi động thì hiển thị giao diện camera

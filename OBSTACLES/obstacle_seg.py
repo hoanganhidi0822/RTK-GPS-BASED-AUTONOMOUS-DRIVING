@@ -10,7 +10,8 @@ from scipy.spatial.transform import Rotation as R
 import config as cf
 from collections import deque
 from OBSTACLES.Segformer.road_segmentation import get_steering_angle 
-camera_index = 0
+
+camera_index = 2
 
 cf.det_image = np.zeros((480, 640, 3))
 cf.depth_image = np.zeros((480, 640, 3))
@@ -164,8 +165,14 @@ def process_depth():
                 if class_id not in [0, 1, 2, 3, 4, 7]:  # 0: person, 2: car
                     continue
                 xmin, ymin, xmax, ymax = bbox.xyxy[0].cpu().numpy()
-                if xmax - xmin < 10 or ymax - ymin < 10:
-                    continue  # skip small boxes
+
+
+                # Giới hạn kích thước bounding box để loại bỏ nhiễu
+                bbox_width = xmax - xmin
+                bbox_height = ymax - ymin
+                if bbox_width < 10 or bbox_height < 10 or bbox_width > 400 or bbox_height > 400:
+                    continue
+
 
                 depth_values_bbox = depth_map[int(ymin):int(ymax), int(xmin):int(xmax)]
                 if depth_values_bbox.size == 0:
@@ -207,7 +214,7 @@ def process_depth():
                     
                     cv2.rectangle(raw_frame, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 1)
                     # Hiển thị thông tin
-                    cv2.putText(raw_frame, f"X: {z_real:.2f} m", (int(xmin), int(ymax) + 15),
+                    cv2.putText(raw_frame, f"X: {x_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         cf.obstacles = obstacles
