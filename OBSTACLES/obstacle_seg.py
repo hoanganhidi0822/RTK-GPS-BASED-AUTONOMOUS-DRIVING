@@ -217,6 +217,7 @@ def process_depth():
                     cv2.putText(raw_frame, f"X: {x_real:.2f} m", (int(xmin), int(ymax) + 15),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+        # cv2.imwrite(f"OBSTACLES/data_image/det_image_{count_frame}",raw_frame)
         cf.obstacles = obstacles
         cf.persons = persons
         obstacles = []

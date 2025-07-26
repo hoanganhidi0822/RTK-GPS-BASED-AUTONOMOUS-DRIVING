@@ -1,4 +1,5 @@
 import serial
+import serial.tools.list_ports
 import time
 import config as cf
 
@@ -15,76 +16,84 @@ def dec2deg(value):
     position = deg + minutes
     return "{:.10f}".format(position)
 
-def wait_for_com_port(port):
-    while True:
-        try:
-            ser = serial.Serial(port, baudrate=115200, timeout=0.1)
-            ser.close()
-            return
-        except serial.SerialException:
-            print(f"Port {port} not available yet, waiting...")
-            time.sleep(1)
-
-def connect_to_serial(port, baudrate=115200, timeout=0.1):
-    """Handles the connection to the serial port."""
-    wait_for_com_port(port)
+def is_gps_device(port_path, baudrate=115200):
     try:
-        ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
-        return ser
-    except serial.SerialException as e:
-        print(f"Failed to connect to {port}: {e}")
-        return None
+        with serial.Serial(port_path, baudrate=baudrate, timeout=0.1) as ser:
+            for _ in range(2):
+                line = ser.readline().decode(errors="ignore").strip()
+                if line.startswith("$GP"):
+                    print(f"[INFO] ✅ GPS detected on {port_path}")
+                    return True
+    except Exception:
+        pass
+    return False
 
-def get_gps_data(ser):
-    """Reads GPS data from an already connected serial port."""
-    lat = lon = sat_count = heading = speed = None
-    rtk_status = None
+def find_gps_port():
+    ports = [p.device for p in serial.tools.list_ports.comports() if "ttyUSB" in p.device]
+    for port in ports:
+        print(f"[INFO] 🔍 Probing {port}...")
+        if is_gps_device(port):
+            return port
+    return None
+
+def get_gps_data(ser=None, baudrate=115200, timeout=0.2):
+    lat = lon = heading = sat_count = rtk_status = speed = None
 
     while True:
-        # gps_data = ser.readline().decode("utf8").strip()
         try:
-            gps_data = ser.readline ().decode("utf8").strip()
-        except UnicodeDecodeError:
-            continue
-        if gps_data:
-            try:
+            # (Re)connect if serial is None or closed
+            if ser is None or not ser.is_open:
+                port = find_gps_port()
+                if not port:
+                    print("[INFO] ⏳ Waiting for GPS device...")
+                    time.sleep(0.1)
+                    continue
+                print(f"[INFO] Connecting to {port}...")
+                ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
+
+            # Read line from GPS
+            gps_data = ser.readline().decode("utf8", errors="ignore").strip()
+
+            if gps_data:
                 gps_data_split = gps_data.split(',')
-                
-                # if gps_data.startswith("$GPHDT"):
-                #     heading = float(gps_data_split[1])
-                
-                if gps_data.startswith("$GPYBM"):
-                    if len(gps_data_split) > 6 and gps_data_split[6]:
-                        heading = float(gps_data_split[6])
-                
-                elif gps_data.startswith("$GPGGA"):
-                    if len(gps_data_split) > 9:
-                        lat = dec2deg(float(gps_data_split[2])) if gps_data_split[2] else None
-                        lon = dec2deg(float(gps_data_split[4])) if gps_data_split[4] else None
-                        sat_count = int(gps_data_split[7]) if gps_data_split[7] else None
-                        fix_quality = int(gps_data_split[6]) if gps_data_split[6] else 0
 
-                        # Determine RTK status
-                        if fix_quality == 4:
-                            rtk_status = "RTK Fixed"
-                        elif fix_quality == 5:
-                            rtk_status = "RTK Float"
-                        elif fix_quality == 2:
-                            rtk_status = "DGPS"
-                        elif fix_quality == 1:
-                            rtk_status = "Single"
-                        elif fix_quality == 6:
-                            rtk_status = "Fusion"
-                        else:
-                            rtk_status = "GPS Weak"
+                if gps_data.startswith("$GPYBM") and len(gps_data_split) > 6 and gps_data_split[6]:
+                    heading = float(gps_data_split[6])
 
-                elif gps_data.startswith("$GPVTG"):
-                    if len(gps_data_split) > 7 and gps_data_split[7]:
-                        speed = float(gps_data_split[7])  # Speed in km/h
+                elif gps_data.startswith("$GPGGA") and len(gps_data_split) > 9:
+                    lat = dec2deg(float(gps_data_split[2])) if gps_data_split[2] else None
+                    lon = dec2deg(float(gps_data_split[4])) if gps_data_split[4] else None
+                    sat_count = int(gps_data_split[7]) if gps_data_split[7] else None
+                    fix_quality = int(gps_data_split[6]) if gps_data_split[6] else 0
 
-                # Only return when all values are available
+                    rtk_status = {
+                        4: "RTK Fixed",
+                        5: "RTK Float",
+                        2: "DGPS",
+                        1: "Single",
+                        6: "Fusion"
+                    }.get(fix_quality, "GPS Weak")
+
+                elif gps_data.startswith("$GPVTG") and len(gps_data_split) > 7 and gps_data_split[7]:
+                    speed = float(gps_data_split[7])
+
                 if lat and lon and heading and sat_count and rtk_status and speed is not None:
                     return lat, lon, heading, sat_count, rtk_status, speed
 
-            except Exception as e:
-                print("Error processing GPS data:", e)
+        except (serial.SerialException, OSError) as e:
+            print(f"[WARN] 🔌 Lost connection: {e}")
+            try:
+                if ser:
+                    ser.close()
+            except:
+                pass
+            ser = None
+            print("[INFO] 🔄 Waiting for GPS reconnect...")
+            time.sleep(0.1)
+
+        except UnicodeDecodeError:
+            continue
+
+        except Exception as e:
+            print(f"[ERROR] ❗ Unexpected error: {e}")
+            time.sleep(0.1)

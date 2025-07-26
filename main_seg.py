@@ -6,7 +6,7 @@ import threading
 import config as cf
 from RTK_GPS.GPS_module import *
 from HD_MAP.HDMAP import *
-from CONTROLLER.utils.communication import STM32
+from CONTROLLER.utils.communication import *
 from OPTIMAL_TRAJECTORY.frenet_optimal_trajectory import *
 
 from OBSTACLES.obstacle_seg import process_depth
@@ -16,9 +16,11 @@ from VOICE.voice import *
 import simpleaudio as sa
 
 # --------------- UART ------------------------- #
-gps_ser = connect_to_serial("/dev/ttyUSB0", 115200)
-stm32 = STM32(port="/dev/ttyUSB1", baudrate=115200)
-# gps_ser = 1
+
+stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
+gps_port = find_gps_port()
+gps_ser = serial.Serial(gps_port, baudrate=115200, timeout=0.1)
+
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
@@ -82,8 +84,8 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 def update_state(ser):
    
     # ------------- GPS ------------- #
-    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser)
-    # rtk_status = "Single"
+    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser=ser)
+    # rtk_status = "RTK Fixed"
     # print(f"lat {lat}, lon {lon}, heading {car_heading}")
     # lat, lon, car_heading, rtk_status, speed = 10.8527006850,106.7714474283,184, "RTK Fixed", 15
     # time.sleep(0.1)
@@ -130,7 +132,7 @@ def classify_turn(angle, threshold=7):
         return "straight"
 
 # Ngưỡng vùng an toàn phía trước xe
-SAFETY_ZONE_X = 3 
+SAFETY_ZONE_X = 4 
 SAFETY_ZONE_Z = 8.0  
 
 def is_in_safety_zone(x, z):
@@ -362,7 +364,7 @@ def main():
 
             found_person = False
             for person in persons:
-                if abs(person[0]) < danger_zone and abs(person[1]) < 6.0:
+                if abs(person[0]) < danger_zone and abs(person[1]) < 8.5:
                     found_person = True
                     break
 
