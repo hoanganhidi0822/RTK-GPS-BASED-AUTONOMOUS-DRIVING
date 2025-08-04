@@ -75,7 +75,8 @@ def get_gps_data(ser):
                         lon = dec2deg(float(gps_data_split[4])) if gps_data_split[4] else None
                         sat_count = int(gps_data_split[7]) if gps_data_split[7] else None
                         fix_quality = int(gps_data_split[6]) if gps_data_split[6] else 0
-
+                        age = float(gps_data_split[13])
+                        print(age)
                         # Determine RTK status
                         if fix_quality == 4:
                             rtk_status = "RTK Fixed"
@@ -96,7 +97,7 @@ def get_gps_data(ser):
 
                 # Only return when all values are available
                 if lat and lon and heading and sat_count and rtk_status and speed is not None:
-                    return lat, lon, heading, sat_count, rtk_status, speed
+                    return lat, lon, heading, sat_count, rtk_status, speed, age
 
             except Exception as e:
                 print("Error processing GPS data:", e)
@@ -112,8 +113,9 @@ def get_gps_data_for_dead_reckoning(ser):
             gps_data = ser.readline().decode("utf8").strip()
         except UnicodeDecodeError:
             continue
-
+            
         if gps_data:
+            # print(gps_data)
             parts = gps_data.split(',')
 
             try:
@@ -122,7 +124,7 @@ def get_gps_data_for_dead_reckoning(ser):
                     # Example: $GPYBM,SN...,TIME,LAT,LON,ALT,HEAD,PITCH,ROLL,vN,vE,vU,...
                     lat = float(parts[3])
                     lon = float(parts[4])
-                    heading = float(parts[5])
+                    heading = float(parts[6])
                     pitch = float(parts[6])
                     roll = float(parts[7])
                     vN = float(parts[8])
@@ -131,6 +133,8 @@ def get_gps_data_for_dead_reckoning(ser):
                     sat_count = int(parts[18]) if parts[18].isdigit() else None
                     ins_status = int(parts[17]) if parts[17].isdigit() else None
                     # RTK status từ phần fix trong GGA hoặc INS_STATE
+                    age = float(parts[21])
+                    
                     rtk_status = {
                         4: "RTK Fixed",
                         5: "RTK Float",
@@ -139,30 +143,11 @@ def get_gps_data_for_dead_reckoning(ser):
                         6: "Fusion",
                     }.get(ins_status, "Unknown")
 
-                # Nếu thiếu heading, lấy từ GPHDT
-                elif gps_data.startswith("$GPHDT") and len(parts) > 1:
-                    heading = float(parts[1])
-
-                # Nếu thiếu lat/lon, lấy từ GPGGA
-                elif gps_data.startswith("$GPGGA") and len(parts) > 6:
-                    if not lat and parts[2] and parts[3]:
-                        lat = dmm_to_deg(float(parts[2]), parts[3])
-                    if not lon and parts[4] and parts[5]:
-                        lon = dmm_to_deg(float(parts[4]), parts[5])
-                    if not sat_count and parts[7]:
-                        sat_count = int(parts[7])
-                    fix_quality = int(parts[6]) if parts[6] else 0
-                    if not rtk_status:
-                        rtk_status = {
-                            4: "RTK Fixed",
-                            5: "RTK Float",
-                            2: "DGPS",
-                            1: "Single",
-                            6: "Fusion",
-                        }.get(fix_quality, "GPS Weak")
-
+               
                 # Khi đủ dữ liệu thì return
                 if lat is not None and lon is not None and heading is not None:
+                    # return lat, lon, heading, sat_count, rtk_status, ins_status
+                    print(f"age: {age}, status: {rtk_status}")
                     return {
                         "lat": lat,
                         "lon": lon,

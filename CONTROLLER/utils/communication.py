@@ -79,7 +79,7 @@ class STM32:
             self.stm32.write(data_to_send.encode())
 
         except (serial.SerialException, OSError) as e:
-            cf.camera_error = 1
+            # cf.camera_error = 1
             print(f"[ERROR] ❌ Serial communication failed: {e}")
             try:
                 if self.stm32:

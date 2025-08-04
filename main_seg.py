@@ -15,6 +15,18 @@ from VISUALIZATION.visualization import *
 from VOICE.voice import *
 import simpleaudio as sa
 
+from collections import deque
+
+from RTK_GPS.imu import BNO055Compass
+
+# compass = BNO055Compass()
+
+yaw_buffer = deque(maxlen=5)
+
+def smoothed_yaw(new_yaw):
+    yaw_buffer.append(new_yaw)
+    return sum(yaw_buffer) / len(yaw_buffer)
+
 # --------------- UART ------------------------- #
 
 stm32 = STM32(port="/dev/ttyUSB0", baudrate=115200)
@@ -24,6 +36,9 @@ gps_ser = serial.Serial(gps_port, baudrate=115200, timeout=0.1)
 
 collision_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/forward_collision_warning.wav")
 destination_sound = sa.WaveObject.from_wave_file("VISUALIZATION/sound/reach.wav")
+
+
+
 
 # ---------------- Config init ------------------ #
 cf.latitude = None
@@ -82,19 +97,26 @@ def update_vis(x,y,yaw,steering_angle,paths,optimal_path, tx, ty,tyaw,ob,gps_spe
 
 # ---------- Car State ------------ #
 def update_state(ser):
-   
+    # print("Ser main", ser)
     # ------------- GPS ------------- #
-    lat, lon, car_heading, sat_count, rtk_status, speed = get_gps_data(ser=ser)
-    # rtk_status = "RTK Fixed"
-    # print(f"lat {lat}, lon {lon}, heading {car_heading}")
-    # lat, lon, car_heading, rtk_status, speed = 10.8527006850,106.7714474283,184, "RTK Fixed", 15
-    # time.sleep(0.1)
-    
-    # -------- Convert data to X Y frame --------- #
+    lat, lon, car_heading, sat_count, rtk_status, speed,hdop, ser_nd = get_gps_data_for_dead_reckoning(ser)
+
+    # print(f"AGE: {hdop}, Status: {rtk_status}")
+    heading = None
+    if heading is not None:
+        yaw_fi = smoothed_yaw(heading)
+    else:
+        yaw_fi = smoothed_yaw(car_heading)
+        # rtk_status = "RTK Fixed"
+        # print(f"lat {lat}, lon {lon}, heading {car_heading}")
+        # lat, lon, car_heading, rtk_status, speed = 10.8527006850,106.7714474283,184, "RTK Fixed", 15
+        # time.sleep(0.1)
+        
+        # -------- Convert data to X Y frame --------- #
     x, y = lat_lon_to_xy(float(lat), float(lon))
-    yaw_c = np.deg2rad(convert_yaw(float(car_heading), yaw_offset=90))
+    yaw_c = np.deg2rad(convert_yaw(float(yaw_fi), yaw_offset=90))
     
-    return lat, lon, rtk_status, speed, x, y, yaw_c 
+    return lat, lon, rtk_status, speed, x, y, yaw_c, ser_nd
 
 # ------ Depth_Obstacle_Position_Estimation ------- #
 def depth_thread():
@@ -180,10 +202,16 @@ def main():
     stop_triggered = False
     resume_timer = None  # Thời điểm bắt đầu đếm để chạy lại
 
+    gps_port = find_gps_port()
+    gps_ser = serial.Serial(gps_port, baudrate=115200, timeout=0.1)
+
+    print("Ser1", gps_ser)
     # RTK‑status stop/resume timers
     rtk_bad = False
     rtk_bad_start = None
     rtk_resume_start = None
+
+    gps_ser_nd = None
 
     stm32(angle=int(0), speed=int(0), brake_state=0)
 
@@ -194,7 +222,7 @@ def main():
     # -- Wait GPS --- #
     while True:
         
-        lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
+        lat, lon, rtk_status, gps_speed, x, y, yaw, gps_ser= update_state(gps_ser)
         try:
             lat = float(lat)         
             lon = float(lon)
@@ -203,7 +231,8 @@ def main():
                 break
         except ValueError:
             pass  
-
+    
+    print("ser2", gps_ser)
     # Start thread for depth processing
     time.sleep(1)
     depth_thread_instance = threading.Thread(target=depth_thread)
@@ -243,10 +272,15 @@ def main():
         log_count += 1
         obs = []
         # Update vehicle state using RTK GPS
-        lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
+        
+        lat, lon, rtk_status, gps_speed, x, y, yaw, gps_ser_nd= update_state(ser = gps_ser)
+        # if gps_ser is not None:
+        #     print("SERRRRRRRRRRRRRRRR",gps_ser_nd.is_open)
+        #     print("xxx", gps_ser_nd)
         cf.rtk_status = rtk_status
         cf.latitude   = lat
         cf.longitude  = lon
+        gps_ser = gps_ser_nd
         
         if x == None:
             obs = []
@@ -285,7 +319,7 @@ def main():
             print(f"[WARNING] optimal_path is None — thử lại lần {retry + 1}/{MAX_RETRY}")
             retry += 1
 
-            lat, lon, rtk_status, gps_speed, x, y, yaw = update_state(gps_ser)
+            lat, lon, rtk_status, gps_speed, x, y, yaw, gps_ser_nd= update_state(ser=gps_ser)
             
             # Cập nhật obstacles
             obstacles = []
@@ -475,7 +509,7 @@ def main():
                 should_stop = True
 
             # 3) RTK‑status hysteresis
-            if cf.rtk_status != "RTK Fixed" and cf.rtk_status != "Fusion":
+            if cf.rtk_status != "RTK Fixed" and cf.rtk_status != "RTK INS Fusion":
 
                 if not rtk_bad:
                     rtk_bad = True

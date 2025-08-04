@@ -576,10 +576,10 @@ def run_map(name):
     # Example usage 
     simulation = 0
     if simulation != 1:
-        lat, lon, _,_,car_heading, sat_count = get_gps_data(ser=gps_ser)
+        lat, lon, _,_,car_heading, sat_count,_ = get_gps_data(ser=gps_ser)
         
         while True:
-            lat, lon,_,_, car_heading, sat_count = get_gps_data(ser=gps_ser)
+            lat, lon,_,_, car_heading, sat_count,_ = get_gps_data(ser=gps_ser)
             try:
                 lat = float(lat)  
                 lon = float(lon)

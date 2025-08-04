@@ -153,7 +153,7 @@ class PlotCanvas(FigureCanvas):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(200)
+        self.timer.start(100)
 
     def update_plot(self):
         for line in self.path_lines:
@@ -331,7 +331,7 @@ class VehicleStatusFrame(QFrame):
 
         if "Fixed" in status_text:
             color = "lightgreen"
-        elif "Float" in status_text:
+        elif "RTK INS Fusion" in status_text:
             color = "orange"
         else:
             color = "red"
