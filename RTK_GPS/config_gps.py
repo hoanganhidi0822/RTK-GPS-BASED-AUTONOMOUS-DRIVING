@@ -2,7 +2,7 @@ import serial
 import time
 
 # === Thông số Serial ===
-PORT = "/dev/ttyUSB3"     # hoặc COMx nếu dùng Windows
+PORT = "/dev/ttyUSB1"     # hoặc COMx nếu dùng Windows
 BAUDRATE = 115200
 TIMEOUT = 1
 
