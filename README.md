@@ -89,7 +89,7 @@ pip install -r requirements.txt
 ### Model Weights  
 Download and place in `weights/`:  
 - YOLOv11 → `yolo11n.pt`  
-- DepthAnything-V2 → `depthanything_v2_vit_small.pth`  
+- DepthAnything-V2 → `depthanything_v2_vit_base.pth`  
 
 ---
 
@@ -97,13 +97,8 @@ Download and place in `weights/`:
 
 ```bash
 # Launch GUI (map + perception + planner)
-python main.py
+./run.sh
 
-# Run perception only (camera 0)
-python perception/run_detection.py --camera 0
-
-# Test Frenet + Pure Pursuit planner
-python planning/test_fot_pure_pursuit.py --viz
 ```
 
 ---
@@ -116,7 +111,7 @@ RTK-GPS-BASED-AUTONOMOUS-DRIVING/
 ├── perception/       # YOLOv11 + DepthAnything-V2
 ├── planning/         # Frenet Optimal Trajectory
 ├── control/          # Pure Pursuit + PID
-├── localization/     # GPS (future: IMU/VO fusion)
+├── localization/     # GPS RTK
 ├── config/           # Calibration + params
 ├── scripts/          # Tools & data logging
 ├── weights/          # Pretrained models
@@ -136,10 +131,9 @@ RTK-GPS-BASED-AUTONOMOUS-DRIVING/
 
 ## 🛠 Roadmap  
 
-- Sensor fusion (RTK-GPS + IMU + VO).  
-- HD-map + global path planning (A* / Lanelet2).  
+- Sensor fusion (RTK-GPS + IMU).  
+- HD-map + global path planning (A*).  
 - LiDAR integration + multi-object tracking.  
-- ROS2 modular migration.  
 
 ---
 
