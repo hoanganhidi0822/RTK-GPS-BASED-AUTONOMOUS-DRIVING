@@ -1,124 +1,150 @@
 
-# RTK‑GPS‑BASED‑AUTONOMOUS‑DRIVING
+# RTK-GPS-BASED-AUTONOMOUS-DRIVING
 
-> Outdoor autonomous golf‑cart navigation using **RTK‑GPS**, **AI perception** (YOLOv11 + DepthAnything‑V2), and **Frenet Optimal Trajectory** with **Pure Pursuit** control.  
-> Author: **Phan Văn Hoàng Anh** (HCMUTE, Intelligent Systems Lab)
+A research project on **outdoor autonomous vehicle navigation** using **RTK-GPS**, **AI-based perception** (YOLOv11 + DepthAnything-V2), and **Frenet Optimal Trajectory Planning** with **Pure Pursuit Control**.  
 
-![Platform](assets/golfcart_hcmute.jpg)
+## 📌 Overview  
 
----
+This project implements an **autonomous golf-cart platform** tested at HCMUTE campus. The navigation stack combines centimeter-level localization, deep-learning-based perception, local planning, and low-level control.  
 
-## 1) Project Overview
-
-This repository contains a real‑time navigation stack for an outdoor autonomous vehicle (golf‑cart platform). The stack integrates high‑precision localization, monocular perception, local planning, and low‑level control with a PyQt5 GUI for monitoring and tele‑op.
-
-**Highlights**
-- Centimeter‑level localization with **RTK‑GPS (Sino M900)**.
-- Obstacle detection (**YOLOv11**) and monocular **depth estimation (DepthAnything‑V2)**.
-- **Frenet Optimal Trajectory (FOT)** local planner and **Pure Pursuit** tracking.
-- PyQt5‑based GUI: GPS map, obstacles, vehicle state, and live camera.
-- Measured performance (outdoor campus):
-  - Localization accuracy: ± **10 cm** (RTK fix)
-  - Obstacle 3D position error: < **0.2 m** (longitudinal), < **0.3 m** (lateral) @ 3–8 m
-  - Trajectory tracking error: **~0.20 m**
-  - End‑to‑end throughput: **~20 FPS** (RTX 3050 Ti)
+<p align="center">
+  <img src="assets/golfcart_hcmute.jpg" width="70%">
+</p>  
 
 ---
 
-## 2) Hardware & Wiring Overview
+## 🚗 System Architecture  
 
-![Hardware Stack](assets/hardware_stack.png)
+<p align="center">
+  <img src="assets/system_architecture.png" width="80%">
+</p>  
 
-**Modules**
-- **a. On‑board PC** (Ubuntu, CUDA, PyTorch)
-- **b. Monocular Camera** (USB IMX335)
-- **c. RTK‑GPS** (Sino GNSS M900, survey antenna)
-- **d. STM32‑based control board** (steering / brake I/O, PWM, ADC)
-- **e1. Steering Actuator** (servo/gearbox)
-- **e2. Encoder / feedback sensor**
-- **f1–f2. Power & motor drivers**
-- **g. Golf‑cart platform** (ISLAB‑C102)
-
----
-
-## 3) System Architecture
-
-![System Architecture](assets/system_architecture.png)
-
-**Data flow (simplified)**
-1. **Sensors** → camera & RTK‑GPS.
-2. **Perception** → YOLOv11 (objects), DepthAnything‑V2 (dense depth). 3D obstacle coordinates are computed in the camera frame and transformed to the global frame using extrinsics + GPS pose.
-3. **Local Planner** → Frenet Optimal Trajectory samples and scores candidate paths (smoothness, collision, curvature, goal progress).
-4. **Controller** → Pure Pursuit outputs steering; throttle/brake commands are regulated by simple speed PID.
-5. **GUI** → PyQt5 map + overlays (objects, path, states).
+**Pipeline**  
+1. **Sensor Data**: RTK-GPS + Monocular Camera.  
+2. **Perception**: YOLOv11 (object detection) + DepthAnything-V2 (depth estimation).  
+3. **Planner**: Frenet Optimal Trajectory (local path generation).  
+4. **Control**: Pure Pursuit (trajectory tracking).  
+5. **Visualization**: PyQt5 GUI (map, obstacles, vehicle state).  
 
 ---
 
-## 4) Demos
+## 🔧 Hardware Setup  
 
-**Perception → Depth → Planning → Control**
+<p align="center">
+  <img src="assets/hardware_stack.png" width="90%">
+</p>  
 
-![Demo 1](assets/demo_citylane_1.gif)  
-![Demo 2](assets/demo_citylane_2.gif)
-
-**Perception Snapshots** (detection, depth projection, road segmentation & centerline)
-
-![Perception Examples](assets/perception_examples.png)
+- **Onboard PC**: Ubuntu, CUDA, PyTorch.  
+- **Camera**: IMX335 USB.  
+- **RTK-GPS**: Sino GNSS M900.  
+- **Controller Board**: STM32 for steering/brake actuation.  
+- **Actuators**: Steering servo (gearbox), brake motor.  
+- **Platform**: ISLAB-C102 Golf Cart.  
 
 ---
 
-## 5) Installation
+## 🎯 Features  
 
-### 5.1 Prerequisites
-- Ubuntu 22.04/24.04, Python **3.9+**
-- NVIDIA GPU with CUDA (tested: **RTX 3050 Ti**)
-- PyTorch 2.x (CUDA build), OpenCV‑Python, NumPy, PyQt5, Matplotlib
-- Model weights: **YOLOv11** (e.g., `yolo11n.pt`) and **DepthAnything‑V2**
+- **Localization**: RTK-GPS with ±10 cm accuracy.  
+- **Perception**: YOLOv11 (objects), DepthAnything-V2 (monocular depth), SegFormer-B0 (road segmentation).  
+- **Planning**: Frenet Optimal Trajectory, smooth and collision-free.  
+- **Control**: Pure Pursuit for stable path following.  
+- **GUI**: PyQt5 interface with GPS map + live camera + planner view.  
 
-### 5.2 Setup
+---
+
+## 📊 Demo  
+
+**Full-stack demo (perception → depth → planning → control):**  
+
+<p align="center">
+  <img src="assets/demo_citylane_1.gif" width="48%">
+  <img src="assets/demo_citylane_2.gif" width="48%">
+</p>  
+
+**Perception Snapshots:**  
+
+<p align="center">
+  <img src="assets/perception_examples.png" width="95%">
+</p>  
+
+---
+
+## ⚙️ Installation  
+
+### Requirements  
+- Ubuntu 22.04 / 24.04  
+- Python 3.9+  
+- PyTorch 2.x (CUDA)  
+- OpenCV, NumPy, Matplotlib, PyQt5  
+
+### Setup  
 ```bash
-git clone https://github.com/<your-username>/RTK-GPS-BASED-AUTONOMOUS-DRIVING.git
+git clone https://github.com/hoanganhidi0822/RTK-GPS-BASED-AUTONOMOUS-DRIVING.git
 cd RTK-GPS-BASED-AUTONOMOUS-DRIVING
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Put model weights here:
-#   - weights/yolo11n.pt
-#   - weights/depthanything_v2_vit_small.pth
 ```
 
-### 5.3 Quick Start
+### Model Weights  
+Download and place in `weights/`:  
+- YOLOv11 → `yolo11n.pt`  
+- DepthAnything-V2 → `depthanything_v2_vit_small.pth`  
+
+---
+
+## 🚀 Usage  
+
 ```bash
-# Launch full GUI (map + camera + planner)
+# Launch GUI (map + perception + planner)
 python main.py
 
-# Test perception only with a USB camera:
+# Run perception only (camera 0)
 python perception/run_detection.py --camera 0
 
-# Run local planner unit test (Frenet + Pure Pursuit):
+# Test Frenet + Pure Pursuit planner
 python planning/test_fot_pure_pursuit.py --viz
 ```
 
 ---
 
-## 6) Repository Layout (suggested)
+## 📂 Repository Structure  
 
 ```
 RTK-GPS-BASED-AUTONOMOUS-DRIVING/
-├── gui/                     # PyQt5 UI and widgets
-├── perception/              # YOLOv11, DepthAnything-V2 wrappers
-├── planning/                # Frenet Optimal Trajectory, path utils
-├── control/                 # Pure Pursuit, speed PID
-├── localization/            # GPS parsing, (future) IMU/VO fusion
-├── config/                  # calibration, map, planner params
-├── weights/                 # *.pt, *.pth (gitignored)
-├── scripts/                 # tools: data log, playback, calibration
-└── main.py
+├── gui/              # PyQt5 GUI
+├── perception/       # YOLOv11 + DepthAnything-V2
+├── planning/         # Frenet Optimal Trajectory
+├── control/          # Pure Pursuit + PID
+├── localization/     # GPS (future: IMU/VO fusion)
+├── config/           # Calibration + params
+├── scripts/          # Tools & data logging
+├── weights/          # Pretrained models
+└── main.py           # Entry point
 ```
 
 ---
-References
 
-- Werling et al., “Optimal Trajectory Generation for Dynamic Street Scenarios…” (Frenet)
-- Coulter, “Implementation of the Pure Pursuit Path Tracking Algorithm.”
-- DepthAnything‑V2 (Huang et al.) and YOLOv11.
+## 📈 Results  
+
+- **Localization**: ±10 cm (RTK fix).  
+- **Obstacle depth error**: <0.2 m (longitudinal), <0.3 m (lateral).  
+- **Trajectory tracking**: ~0.20 m average.  
+- **Throughput**: ~20 FPS (RTX 3050 Ti).  
+
+---
+
+## 🛠 Roadmap  
+
+- Sensor fusion (RTK-GPS + IMU + VO).  
+- HD-map + global path planning (A* / Lanelet2).  
+- LiDAR integration + multi-object tracking.  
+- ROS2 modular migration.  
+
+---
+
+## 👤 Author  
+
+**Phan Văn Hoàng Anh**  
+Final-year student @ HCMUTE  
+Focus: AI Perception · Sensor Fusion · Autonomous Driving  
