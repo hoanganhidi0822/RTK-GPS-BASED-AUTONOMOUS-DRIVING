@@ -117,35 +117,7 @@ RTK-GPS-BASED-AUTONOMOUS-DRIVING/
 ```
 
 ---
-
-## 7) Key Parameters
-
-- `config/camera.yaml` → intrinsics/extrinsics (camera ↔ vehicle ↔ GPS antenna)
-- `config/fot.yaml` → sampling ranges, costs (collision, jerk, curvature)
-- `config/controller.yaml` → lookahead distance, wheelbase, speed PID
-- `config/map.yaml` → waypoints, HD‑map reference, RTK base settings
-
----
-
-## 8) Notes & Tips
-
-- Calibrate camera intrinsics, then extrinsics (PnP) against a known board; verify reprojection error < 0.5 px.
-- When GPS RTK drops to float/SPS, switch to road‑segmentation‑only fallback with speed limit.
-- Use moving‑average filters to stabilize depth before projecting to world.
-- Vectorize portions of **Frenet sampling** and **cost evaluation** for speed.
-
----
-
-## 9) Roadmap
-
-- Sensor fusion (RTK‑GPS + IMU + VO) via EKF/IEKF or `robot_localization` (ROS2).
-- HD‑map and global routing (A* / Lanelet2).
-- Add LiDAR option and 3D multi‑object tracking.
-- Port to **ROS2** (Rolling/Jazzy) with modular nodes.
-
----
-
-## 10) References
+References
 
 - Werling et al., “Optimal Trajectory Generation for Dynamic Street Scenarios…” (Frenet)
 - Coulter, “Implementation of the Pure Pursuit Path Tracking Algorithm.”
