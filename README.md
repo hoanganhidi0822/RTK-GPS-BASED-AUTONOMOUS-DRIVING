@@ -55,7 +55,7 @@ This project implements an **autonomous golf-cart platform** tested at HCMUTE ca
 
 ## 📊 Demo  
 
-**Full-stack demo (perception → depth → planning → control):**  
+**Full-stack demo (perception → planning → control):**  
 
 <p align="center">
   <img src="assets/demo_citylane_1.gif" width="48%">
