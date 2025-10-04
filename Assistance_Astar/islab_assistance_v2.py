@@ -15,7 +15,7 @@ from openai import OpenAI
 from pydub.playback import play
 import gc  # Thêm thư viện thu gom rác
 
-client = OpenAI(api_key="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")  # thay YOUR_API_KEY bằng key của bạn
+client = OpenAI(api_key="****")  # thay YOUR_API_KEY bằng key của bạn
 
 cf.cf_destination = "none"
 # client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
