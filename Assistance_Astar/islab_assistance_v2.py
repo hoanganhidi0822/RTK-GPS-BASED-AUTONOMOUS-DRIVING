@@ -18,7 +18,7 @@ import gc  # Thêm thư viện thu gom rác
 client = OpenAI(api_key="****")  # thay YOUR_API_KEY bằng key của bạn
 
 cf.cf_destination = "none"
-# client = genai.Client(api_key="AIzaSyAIptARWvsfvfWfubmwI0eBMrBZm2t34oc")
+# client = genai.Client(api_key="****")
 
 class virtual_assistance:
     def __init__(self):
