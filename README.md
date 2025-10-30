@@ -3,7 +3,7 @@
 
 A research project on **outdoor autonomous vehicle navigation** using **RTK-GPS**, **AI-based perception** (YOLOv11 + DepthAnything-V2), and **Frenet Optimal Trajectory Planning** with **Pure Pursuit Control**.  
 
-## 📌 Overview  
+## Overview  
 
 This project implements an **autonomous golf-cart platform** tested at HCMUTE campus. The navigation stack combines centimeter-level localization, deep-learning-based perception, local planning, and low-level control.  
 
@@ -13,7 +13,7 @@ This project implements an **autonomous golf-cart platform** tested at HCMUTE ca
 
 ---
 
-## 🚗 System Architecture  
+## System Architecture  
 
 <p align="center">
   <img src="assets/system_architecture.png" width="80%">
@@ -28,7 +28,7 @@ This project implements an **autonomous golf-cart platform** tested at HCMUTE ca
 
 ---
 
-## 🔧 Hardware Setup  
+## Hardware Setup  
 
 <p align="center">
   <img src="assets/hardware_stack.png" width="90%">
@@ -43,7 +43,7 @@ This project implements an **autonomous golf-cart platform** tested at HCMUTE ca
 
 ---
 
-## 🎯 Features  
+## Features  
 
 - **Localization**: RTK-GPS with ±10 cm accuracy.  
 - **Perception**: YOLOv11 (objects), DepthAnything-V2 (monocular depth), SegFormer (road segmentation).  
@@ -53,7 +53,7 @@ This project implements an **autonomous golf-cart platform** tested at HCMUTE ca
 
 ---
 
-## 📊 Demo  
+## Demo  
 
 **Full-stack demo (perception → planning → control):**  
 
@@ -70,7 +70,7 @@ This project implements an **autonomous golf-cart platform** tested at HCMUTE ca
 
 ---
 
-## 📂 Repository Structure  
+## Repository Structure  
 
 ```
 RTK-GPS-BASED-AUTONOMOUS-DRIVING/
@@ -84,7 +84,7 @@ RTK-GPS-BASED-AUTONOMOUS-DRIVING/
 
 ---
 
-## 📈 Results  
+## Results  
 
 - **Localization**: ±10 cm (RTK fix).  
 - **Obstacle depth error**: <0.2 m (longitudinal), <0.3 m (lateral).  
@@ -93,7 +93,7 @@ RTK-GPS-BASED-AUTONOMOUS-DRIVING/
 
 ---
 
-## 🛠 Roadmap  
+## Roadmap  
 
 - Sensor fusion (RTK-GPS + IMU).  
 - HD-map + global path planning (A*).  
@@ -101,7 +101,7 @@ RTK-GPS-BASED-AUTONOMOUS-DRIVING/
 
 ---
 
-## 👤 Author  
+## Author  
 
 **Phan Văn Hoàng Anh**  
 Final-year student @ HCMUTE  
