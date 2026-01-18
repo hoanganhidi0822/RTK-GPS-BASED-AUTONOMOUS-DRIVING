@@ -3,6 +3,7 @@ Fot_node = autonomous_car.Fot_node.Fot_node:main
 GPS_node = autonomous_car.GPS_node.GPS_node:main
 control_node = autonomous_car.control_node.control_node:main
 map_planer_node = autonomous_car.map_planer_node.astar_node:main
+odometry_node = autonomous_car.odometry_node.odometry_node:main
 perception_node = autonomous_car.perception_node.perception_node:main
 visualization = autonomous_car.visualization.visualization.main:main
 

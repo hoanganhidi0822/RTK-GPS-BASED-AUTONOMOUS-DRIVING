@@ -1,1 +1,1 @@
-ament_cmake:rclpy:sensor_msgs:std_msgs
+ament_cmake:geometry_msgs:nav_msgs:rclpy:sensor_msgs:std_msgs

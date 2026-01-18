@@ -1,6 +1,13 @@
 package.xml
 setup.cfg
 setup.py
+../../build/autonomous_car/autonomous_car.egg-info/PKG-INFO
+../../build/autonomous_car/autonomous_car.egg-info/SOURCES.txt
+../../build/autonomous_car/autonomous_car.egg-info/dependency_links.txt
+../../build/autonomous_car/autonomous_car.egg-info/entry_points.txt
+../../build/autonomous_car/autonomous_car.egg-info/requires.txt
+../../build/autonomous_car/autonomous_car.egg-info/top_level.txt
+../../build/autonomous_car/autonomous_car.egg-info/zip-safe
 autonomous_car/__init__.py
 autonomous_car.egg-info/PKG-INFO
 autonomous_car.egg-info/SOURCES.txt
@@ -15,6 +22,8 @@ autonomous_car/GPS_node/__init__.py
 autonomous_car/map_planer_node/__init__.py
 autonomous_car/map_planer_node/astar_config.py
 autonomous_car/map_planer_node/astar_node.py
+autonomous_car/odometry_node/__init__.py
+autonomous_car/odometry_node/odometry_node.py
 autonomous_car/perception_node/__init__.py
 autonomous_car/perception_node/perception.py
 autonomous_car/perception_node/perception_node.py
