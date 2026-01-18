@@ -111,6 +111,8 @@ class PlotCanvas(FigureCanvas):
 
         self.path_lines = []
         self.obstacle_artists = []
+        self._closing = False
+        self._layout_done = False
 
         self.obstacle_icon = mpimg.imread(f"{pkg_share}/assets/icon/obstacle.png")
         self.obstacle_img_raw = OffsetImage(self.obstacle_icon, zoom=0.15)
@@ -130,6 +132,8 @@ class PlotCanvas(FigureCanvas):
         self.timer.start(33)
 
     def update_plot(self):
+        if self._closing:
+            return
         for line in self.path_lines:
             line.remove()
         self.path_lines.clear()
@@ -216,8 +220,18 @@ class PlotCanvas(FigureCanvas):
 
         self.ax.set_xlim(self.vehicle_pos[0] - 6, self.vehicle_pos[0] + 6)
         self.ax.set_ylim(self.vehicle_pos[1] - 5, self.vehicle_pos[1] + 30)
-        self.fig.tight_layout()
+        if not self._layout_done:
+            try:
+                self.fig.tight_layout()
+            except Exception:
+                pass
+            self._layout_done = True
         self.ax.figure.canvas.draw_idle()
+
+    def shutdown(self):
+        self._closing = True
+        if getattr(self, "timer", None) is not None:
+            self.timer.stop()
 
     def update_vehicle_position(self, x, y, yaw, paths, optimal_path, tx, ty, tyaw):
         self.vehicle_pos = (x, y)
@@ -709,7 +723,7 @@ class MapDisplayFrame(QFrame):
             self.play_obj = wave_obj.play()
             self.play_obj.wait_done()
 
-        threading.Thread(target=play_and_then).start()
+        threading.Thread(target=play_and_then, daemon=True).start()
         
     def show_camera_view(self):
         self.stacked_layout.setCurrentWidget(self.camera_widget)
@@ -814,9 +828,18 @@ class MapDisplayFrame(QFrame):
         for btn in self.route_buttons:
             btn.setEnabled(enabled)
 
+    def shutdown(self):
+        if getattr(self, "camera_timer", None) is not None:
+            self.camera_timer.stop()
+        if getattr(self, "face_timer", None) is not None and self.face_timer.isActive():
+            self.face_timer.stop()
+        if self.cap is not None and self.cap.isOpened():
+            self.cap.release()
+
 class AutonomousCarUI(QWidget):
     def __init__(self):
         super().__init__()
+        self._closing = False
         self.current_lat = None
         self.current_lon = None
         self.current_heading_deg = None
@@ -1027,7 +1050,15 @@ class AutonomousCarUI(QWidget):
         self.right_frame.show()
     
     def ros_spin_callback(self):
-        rclpy.spin_once(self.node, timeout_sec=0)
+        if self._closing or not rclpy.ok():
+            return
+        try:
+            rclpy.spin_once(self.node, timeout_sec=0)
+        except Exception:
+            self._closing = True
+            if getattr(self, "data_timer", None) is not None:
+                self.data_timer.stop()
+            return
         # self.count += 1
         self.update_data()
 
@@ -1054,6 +1085,14 @@ class AutonomousCarUI(QWidget):
 
     
     def closeEvent(self, event):
+        self._closing = True
+        if getattr(self, "data_timer", None) is not None:
+            self.data_timer.stop()
+        if getattr(self, "right_frame", None) is not None:
+            self.right_frame.shutdown()
+        if getattr(self, "vehicle_display", None) is not None:
+            if getattr(self.vehicle_display, "plot_canvas", None) is not None:
+                self.vehicle_display.plot_canvas.shutdown()
         self.node.destroy_node()
         self.node.get_logger().info('ROS 2 Node destroyed.')
         event.accept()
