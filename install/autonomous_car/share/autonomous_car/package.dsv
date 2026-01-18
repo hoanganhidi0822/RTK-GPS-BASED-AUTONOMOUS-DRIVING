@@ -1,0 +1,9 @@
+source;share/autonomous_car/hook/pythonpath.ps1
+source;share/autonomous_car/hook/pythonpath.dsv
+source;share/autonomous_car/hook/pythonpath.sh
+source;share/autonomous_car/hook/ament_prefix_path.ps1
+source;share/autonomous_car/hook/ament_prefix_path.dsv
+source;share/autonomous_car/hook/ament_prefix_path.sh
+source;../../build/autonomous_car/share/autonomous_car/hook/pythonpath_develop.ps1
+source;../../build/autonomous_car/share/autonomous_car/hook/pythonpath_develop.dsv
+source;../../build/autonomous_car/share/autonomous_car/hook/pythonpath_develop.sh
